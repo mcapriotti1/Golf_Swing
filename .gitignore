@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.pkl
+
+# Virtual environments
+.env/
+.venv/
+.golf/
+.hand2/
+.conda/
+*.egg-info/
+
+# VS Code
+.vscode/
+
+# Others
+uploads/

@@ -9,12 +9,6 @@ from pathlib import Path
 import os
 from moviepy import ImageSequenceClip
 import json
-# from mediapipe.tasks import python
-# from mediapipe.tasks.python import vision
-# from mediapipe.framework.formats import landmark_pb2
-
-
-
 
 """ ------------------------------ EXTRACTING LANDMARK DATA --------------------------------------------- """
 
@@ -49,38 +43,6 @@ def trim_video(video_path, start_time, end_time, output_path=None):
         trimmed.write_videofile(output_path, codec="libx264", audio_codec="aac")
     
     return output_path
-
-# def old_draw_landmarks(video_path, output_dir="main-project/website/static/landmarks_drawn_videos"):
-#     os.makedirs(output_dir, exist_ok=True)
-#     base_filename = os.path.basename(video_path)
-#     output_path = os.path.join(output_dir, base_filename)
-
-#     # Load Mediapipe models
-#     mp_pose = mp.solutions.pose
-#     pose = mp_pose.Pose()
-#     mp_drawing = mp.solutions.drawing_utils
-
-#     # Define a frame processing function
-#     def annotate_frame(frame: np.ndarray) -> np.ndarray:
-#         image_rgb = cv2.cvtColor(frame, cv2.COLOR_RGB2BGR)
-#         results = pose.process(image_rgb)
-
-#         if results.pose_landmarks:
-#             mp_drawing.draw_landmarks(image_rgb, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
-
-#         return cv2.cvtColor(image_rgb, cv2.COLOR_BGR2RGB)
-
-#     # Load the video
-#     clip = VideoFileClip(video_path)
-
-#     # Apply frame transformation
-#     annotated_clip = clip.image_transform(annotate_frame)
-
-#     # Save the new video
-#     annotated_clip.write_videofile(output_path, codec="libx264", audio_codec="aac")
-
-#     pose.close()
-#     return f"landmarks_drawn_videos/{base_filename}"
 
 def create_landmarks(video_path, num_frames = 30):
     # Setup MediaPipe
@@ -210,8 +172,6 @@ def draw_landmarks(video_path, output_dir="website/static/landmarks_drawn_videos
 
     return f"landmarks_drawn_videos/{base_filename}"
 
-
-
 def cleanup_old_files(folder, max_age_minutes=10):
     now = time.time()
     max_age = max_age_minutes * 60  # seconds
@@ -224,8 +184,13 @@ def cleanup_old_files(folder, max_age_minutes=10):
                 print(f"Deleting old file: {file_path}")
                 os.remove(file_path)
 
+def cleanup_folder(folder):
+    for filename in os.listdir(folder):
+        file_path = os.path.join(folder, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
 def save_prediction(json_filename, file_path, prediction, confidence):
-    # Create the dictionary entry
 
     filename = os.path.basename(file_path)
     new_entry = {
@@ -235,7 +200,6 @@ def save_prediction(json_filename, file_path, prediction, confidence):
         }
     }
 
-    # Check if file exists
     if os.path.exists(json_filename):
         with open(json_filename, 'r') as f:
             try:
@@ -245,15 +209,11 @@ def save_prediction(json_filename, file_path, prediction, confidence):
     else:
         data = {}
 
-    # Update or add the entry
     data.update(new_entry)
 
-    # Save back to file
     with open(json_filename, 'w') as f:
         json.dump(data, f, indent=2)
 
-
-TEN_MINUTES_MS = 10 * 60 * 1000 
 
 def load_predictions(JSON_PATH):
     if os.path.exists(JSON_PATH):
@@ -273,14 +233,13 @@ def clear_old_videos(JSON_PATH):
     now_ms = int(time.time() * 1000)
 
     def is_recent(filename):
-        # Extract timestamp from filename, e.g., video_1756193983905.mp4
+        TEN_MINUTES_MS = 10 * 60 * 1000 
         try:
             timestamp_str = filename.split('_')[1].split('.')[0]
             timestamp = int(timestamp_str)
             age_ms = now_ms - timestamp
             return age_ms < TEN_MINUTES_MS
         except (IndexError, ValueError):
-            # If format unexpected, keep the video just in case
             return True
 
     filtered_data = {fname: info for fname, info in data.items() if is_recent(fname)}
@@ -290,66 +249,6 @@ def clear_old_videos(JSON_PATH):
         print(f"Cleared old videos at {time.strftime('%Y-%m-%d %H:%M:%S')}")
     else:
         print(f"No old videos to clear at {time.strftime('%Y-%m-%d %H:%M:%S')}")
-
-    
-
-
-# def create_landmarks(video_path, output_path, num_frames=30, annotate = False):
-#     landmarks = []
-
-#     cap = cv2.VideoCapture(video_path)
-#     if not cap.isOpened():
-#         print("Error: Could not open input video.")
-#         return
-    
-#     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-#     selected_indices = np.linspace(0, total_frames - 1, num=num_frames, dtype=int)
-
-#     fps = cap.get(cv2.CAP_PROP_FPS)
-#     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-#     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-#     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-#     out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-#     if not out.isOpened():
-#         print("Error: Could not open output video writer.")
-#         return
-
-#     mp_pose = mp.solutions.pose
-#     pose = mp_pose.Pose()
-#     mp_drawing = mp.solutions.drawing_utils
-
-#     frame_idx = 0
-#     selected_set = set(selected_indices)
-
-#     while cap.isOpened():
-#         ret, frame = cap.read()
-#         if not ret:
-#             break
-
-#         if frame_idx in selected_set:
-#             image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-#             results = pose.process(image_rgb)
-
-#             if results.pose_landmarks:
-#                 if annotate:
-#                     mp_drawing.draw_landmarks(frame, results.pose_landmarks, mp_pose.POSE_CONNECTIONS)
-
-#                 frame_landmarks = [{
-#                     'x': lm.x,
-#                     'y': lm.y,
-#                     'z': lm.z,
-#                     'visibility': lm.visibility
-#                 } for lm in results.pose_landmarks.landmark]
-
-#                 landmarks.append(frame_landmarks)
-#         if annotate:
-#             out.write(frame)
-#         frame_idx += 1
-
-#     cap.release()
-#     out.release()
-#     return landmarks
 
 """ CLEANING LANDMARK DATA (And Adding Velocitys/Joint Angles) """
 
@@ -398,43 +297,6 @@ KEY_BODY_PARTS = [
     "Nose",
     "Left Knee", "Right Knee",
 ]
-
-def compute_body_orientation_euler(frame):
-    def get_point(name):
-        idx = BODY_PARTS[name]
-        return np.array([frame[idx]['x'], frame[idx]['y'], frame[idx]['z']])
-    
-    left_shoulder = get_point("Left Shoulder")
-    right_shoulder = get_point("Right Shoulder")
-    left_hip = get_point("Left Hip")
-    right_hip = get_point("Right Hip")
-    nose = get_point("Nose")
-    
-    # Create basis vectors for body local coordinate frame
-    x_axis = right_shoulder - left_shoulder
-    x_axis /= np.linalg.norm(x_axis)
-    
-    hip_vec = right_hip - left_hip
-    hip_vec /= np.linalg.norm(hip_vec)
-    
-    mid_shoulder = (left_shoulder + right_shoulder) / 2
-    mid_hip = (left_hip + right_hip) / 2
-    
-    y_axis = mid_shoulder - mid_hip
-    y_axis /= np.linalg.norm(y_axis)
-    
-    z_axis = np.cross(x_axis, y_axis)
-    z_axis /= np.linalg.norm(z_axis)
-    
-    y_axis = np.cross(z_axis, x_axis)
-    y_axis /= np.linalg.norm(y_axis)
-    
-    rot_matrix = np.vstack([x_axis, y_axis, z_axis]).T
-    
-    r = R.from_matrix(rot_matrix)
-    yaw, pitch, roll = r.as_euler('zyx', degrees=True)
-    
-    return [yaw, pitch, roll]
 
 def angle_between(v1, v2):
     dot = sum(a * b for a, b in zip(v1, v2))

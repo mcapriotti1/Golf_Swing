@@ -3,9 +3,9 @@ import json
 from flask import Flask, request, render_template, redirect, url_for
 import numpy as np
 from collections import Counter
-from utils import flatten_video, trim_video, draw_landmarks, normalize_landmarks, create_landmarks, cleanup_old_files, save_prediction, clear_old_videos
+from utils import flatten_video, trim_video, draw_landmarks, normalize_landmarks, create_landmarks, cleanup_old_files, save_prediction, clear_old_videos, cleanup_folder
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app.config['UPLOAD_FOLDER'] = 'website/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 import joblib
 
@@ -78,6 +78,7 @@ def upload_file():
 
             save_prediction(JSON_PATH, trimmed, final_prediction, confidence)
             clear_old_videos(JSON_PATH)
+            cleanup_folder("website/uploads")
             
             trimmed_filename = os.path.basename(trimmed)
             return redirect(url_for('show_result', video_id=trimmed_filename))
