@@ -24,11 +24,11 @@ KEY_BODY_PARTS = [
 "Right Foot Index", "Nose", "Left Knee", "Right Knee"
 ]
 ```
-- Extracted landmark data for each of the listed body parts from **30** evenly spaced frames per video.
-- Normalized x, y, and z positions to **left hip**, calculated **velocities** between positions for each body part (first frame initlized to 0), computed the **joint angles** specified below.
+- Extracted landmark data for each of the listed body parts from 30 evenly spaced frames per video. Each video is represented as a flattened feature array of length 67,530, including normalized landmark positions, velocities, joint angles, and visibility/presence data across all frames.
+- Normalized x, y, z positions relative to the left hip, calculated velocities for each body part (first frame initialized to 0), and computed the specified joint angles.
 
 ```python
-  joints_to_compute = [
+joints_to_compute = [
   ("Right Shoulder", "Right Elbow", "Right Index"), ("Left Hip", "Left Knee", "Left Foot Index"),
   ("Right Hip", "Right Knee", "Right Foot Index"), ("Left Shoulder", "Left Hip", "Left Foot Index"),
   ("Right Shoulder", "Right Hip", "Right Foot Index"), ("Left Elbow", "Left Shoulder", "Left Hip"),
@@ -36,8 +36,6 @@ KEY_BODY_PARTS = [
 ]
 ```
 
-
-- Included **presence** and **visibility** data from MediaPipe.
 
 ---
 
