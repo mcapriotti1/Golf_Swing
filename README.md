@@ -6,7 +6,7 @@ This project analyzes golf swings and classifies them as either **Pro** or **Ama
 
 ## Dataset
 
-- Collected around 100 golf swing videos:
+- Collected 100 golf swing videos:
   - 50 Pro swings
   - 50 Amateur swings
 - Videos were labeled manually.
@@ -16,33 +16,22 @@ This project analyzes golf swings and classifies them as either **Pro** or **Ama
 ## Pose Extraction
 
 - Used **MediaPipe Pose Landmarker (Heavy)** to extract landmarks.
-- Extracted 30 evenly spaced frames per video.
 - Key body parts used for analysis:
-
 ```python
 KEY_BODY_PARTS = [
-"Left Shoulder", "Right Shoulder",
-"Left Elbow", "Right Elbow",
-"Left Hip", "Right Hip",
-"Left Index", "Right Index",
-"Left Foot Index", "Right Foot Index",
-"Nose",
-"Left Knee", "Right Knee",
+"Left Shoulder", "Right Shoulder", "Left Elbow", "Right Elbow",
+"Left Hip", "Right Hip", "Left Index", "Right Index", "Left Foot Index", 
+"Right Foot Index", "Nose", "Left Knee", "Right Knee"
 ]
 ```
-
-- Positions normalized relative to **left hip**.
-- Calculated **velocities** for each body part.
-- Computed specific **joint angles**:
+- Extracted landmark data for each of the listed body parts from **30** evenly spaced frames per video.
+- Normalized x, y, and z positions to **left hip**, calculated **velocities** between positions for each body part (first frame initlized to 0), computed the **joint angles** specified below.
 
 ```python
   joints_to_compute = [
-  ("Right Shoulder", "Right Elbow", "Right Index"),
-  ("Left Hip", "Left Knee", "Left Foot Index"),
-  ("Right Hip", "Right Knee", "Right Foot Index"),
-  ("Left Shoulder", "Left Hip", "Left Foot Index"),
-  ("Right Shoulder", "Right Hip", "Right Foot Index"),
-  ("Left Elbow", "Left Shoulder", "Left Hip"),
+  ("Right Shoulder", "Right Elbow", "Right Index"), ("Left Hip", "Left Knee", "Left Foot Index"),
+  ("Right Hip", "Right Knee", "Right Foot Index"), ("Left Shoulder", "Left Hip", "Left Foot Index"),
+  ("Right Shoulder", "Right Hip", "Right Foot Index"), ("Left Elbow", "Left Shoulder", "Left Hip"),
   ("Right Elbow", "Right Shoulder", "Right Hip"),
 ]
 ```
