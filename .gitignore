@@ -9,6 +9,7 @@ __pycache__/
 .env/
 .venv/
 .golf/
+.golf2/
 .hand2/
 .conda/
 *.egg-info/

@@ -1,7 +1,6 @@
 import cv2
 import mediapipe as mp
 import numpy as np
-from scipy.spatial.transform import Rotation as R
 import math
 from moviepy import VideoFileClip
 import time
@@ -51,8 +50,10 @@ def create_landmarks(video_path, num_frames = 30):
     PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
     VisionRunningMode = mp.tasks.vision.RunningMode
 
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_heavy.task")
 
-    model_path = r"C:\Users\Micha\Golf_Swing\website\models\pose_landmarker_heavy.task"
+    # model_path = r"C:\Users\Micha\Golf_Swing\website\models\pose_landmarker_heavy.task"
 
     with open(model_path, "rb") as f:
       model_data = f.read()
@@ -109,7 +110,10 @@ def draw_landmarks(video_path, output_dir="website/static/landmarks_drawn_videos
     PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
     VisionRunningMode = mp.tasks.vision.RunningMode
 
-    model_path = r"C:\Users\Micha\Golf_Swing\website\models\pose_landmarker_lite.task"
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_lite.task")
+
+    # model_path = r"C:\Users\Micha\Golf_Swing\website\models\pose_landmarker_lite.task"
 
     with open(model_path, "rb") as f:
         model_data = f.read()

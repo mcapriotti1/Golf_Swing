@@ -1,21 +1,9 @@
 {
-  "video_1756231405520.mp4": {
+  "video_1756234169020.mp4": {
     "prediction": "Amateur",
-    "confidence": 0.61
+    "confidence": 0.67
   },
-  "video_1756231440628.mp4": {
-    "prediction": "Pro",
-    "confidence": 0.81
-  },
-  "video_1756231485929.mp4": {
-    "prediction": "Pro",
-    "confidence": 0.7
-  },
-  "video_1756231836174.mp4": {
-    "prediction": "Amateur",
-    "confidence": 0.71
-  },
-  "video_1756231969264.mp4": {
+  "video_1756234267483.mp4": {
     "prediction": "Amateur",
     "confidence": 0.88
   }
