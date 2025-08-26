@@ -3,13 +3,12 @@ import json
 from flask import Flask, request, render_template, redirect, url_for
 import numpy as np
 from collections import Counter
-from utils import flatten_video, trim_video, draw_landmarks, normalize_landmarks, create_landmarks, cleanup_old_files, save_prediction, clear_old_videos, cleanup_folder
+from website.utils import flatten_video, trim_video, draw_landmarks, normalize_landmarks, create_landmarks, cleanup_old_files, save_prediction, clear_old_videos, cleanup_folder
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'website/uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 import joblib
 
-# Load your model somewhere here (before first request or globally)
 model = joblib.load("website/models/golf_swing_model.pkl")
 JSON_PATH = "website/static/predictions.json"
 

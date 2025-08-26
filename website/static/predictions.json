@@ -1,10 +1,18 @@
 {
-  "video_1756234169020.mp4": {
-    "prediction": "Amateur",
-    "confidence": 0.67
-  },
-  "video_1756234267483.mp4": {
+  "video_1756234973410.mp4": {
     "prediction": "Amateur",
     "confidence": 0.88
+  },
+  "video_1756235025784.mp4": {
+    "prediction": "Amateur",
+    "confidence": 0.88
+  },
+  "video_1756235049076.mp4": {
+    "prediction": "Amateur",
+    "confidence": 0.76
+  },
+  "video_1756235084759.mp4": {
+    "prediction": "Amateur",
+    "confidence": 0.9
   }
 }
