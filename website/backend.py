@@ -20,7 +20,7 @@ def allowed_file(filename):
 def upload_file():
     if request.method == 'POST':
         cleanup_old_files("website/trimmed_videos", max_age_minutes=1)
-        cleanup_old_files("website/static/landmarks_drawn_videos", max_age_minutes=10)
+        cleanup_old_files("website/static/landmarks_drawn_videos", max_age_minutes=2)
 
         # check if the post request has the file part
         if 'video' not in request.files:
@@ -104,7 +104,6 @@ def show_result(video_id):
     prediction = prediction_data['prediction']
     confidence = prediction_data['confidence']
 
-    # Construct path for annotated video from video_id (adjust if needed)
     annotated_video_url = f"landmarks_drawn_videos/{video_id}"
 
     return render_template(

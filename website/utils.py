@@ -109,7 +109,7 @@ def draw_landmarks(video_path, output_dir="website/static/landmarks_drawn_videos
     PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
     VisionRunningMode = mp.tasks.vision.RunningMode
 
-    model_path = r"C:\Users\Micha\Golf_Swing\website\models\pose_landmarker_full.task"
+    model_path = r"C:\Users\Micha\Golf_Swing\website\models\pose_landmarker_lite.task"
 
     with open(model_path, "rb") as f:
         model_data = f.read()

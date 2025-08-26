@@ -224,6 +224,7 @@ input[type="range"]::-moz-range-thumb {
 .video-form-section {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 2rem;
   width: 100%;
   max-width: 1200px;
@@ -248,7 +249,7 @@ input[type="range"]::-moz-range-thumb {
 /* Upload form section override */
 .upload-form .container {
   width: 100%;
-  max-width: 400px;
+  max-width: 300px;
   background-color: #1e1e1e;
 }
 
