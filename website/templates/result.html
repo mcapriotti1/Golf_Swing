@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Prediction Result</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='prediction.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+  <div class="background-blur"></div>
+  <div class="main-content">
+
+    <h1>Prediction Result</h1>
+
+<div class="result-video-wrapper">
+  <div class="prediction-box">
+    <p>
+      <span id="predictionText"
+            class="{{ 'prediction-pro' if prediction == 'Pro' else 'prediction-amateur' }}"
+            data-prediction="{{ prediction }}">
+        {{ prediction }}
+      </span>
+    </p>
+
+    <h4>Confidence</h4>
+    <div class="circle-container">
+      <span id="confidenceText" data-confidence="{{ (confidence * 100) | round(2) }}"> </span>
+      <svg class="progress-ring" width="150" height="150">
+        <circle class="progress-ring__background" cx="75" cy="75" r="68" />
+        <circle class="progress-ring__circle" cx="75" cy="75" r="68" />
+      </svg>
+      <div class="progress-text" id="confidenceCircleText">0%</div>
+    </div>
+  </div>
+
+  {% if annotated_video_url %}
+    <video class="r-video-wrapper" controls>
+      <source src="{{ url_for('static', filename=annotated_video_url) }}" type="video/mp4" />
+      Your browser does not support the video tag.
+    </video>
+  {% endif %}
+</div>
+
+<div class="center-button">
+  <a href="{{ url_for('upload_file') }}" class="custom-file-upload">Upload Another Video</a>
+</div>
+
+  <script src="{{ url_for('static', filename='js/prediction.js') }}"></script>
+</body>
+</html>
+
+
+
+    <!-- <h1>Prediction Result</h1>
+
+    <p><strong>Prediction:</strong>
+      <span id="predictionText"
+            class="{{ 'prediction-pro' if prediction == 'Pro' else 'prediction-amateur' }}"
+            data-prediction="{{ prediction }}">
+        {{ prediction }}
+      </span>
+    </p>
+
+
+
+
+    <div class="circle-container">
+      <span id="confidenceText" data-confidence="{{ (confidence * 100) | round(2) }}"> </span>
+      <svg class="progress-ring" width="120" height="120">
+        <circle class="progress-ring__background" cx="60" cy="60" r="54" />
+        <circle class="progress-ring__circle" cx="60" cy="60" r="54" />
+      </svg>
+      <div class="progress-text" id="confidenceCircleText">0%</div>
+    </div>
+
+
+    {% if annotated_video_url %}
+      <video class="video-wrapper" controls>
+        <source src="{{ url_for('static', filename=annotated_video_url) }}" type="video/mp4" />
+        Your browser does not support the video tag.
+      </video>
+    {% endif %}
+
+    <div class="center-button">
+      <a href="{{ url_for('upload_file') }}" class="custom-file-upload">Upload Another Video</a>
+    </div>
+  </div> -->

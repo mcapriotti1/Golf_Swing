@@ -1,0 +1,131 @@
+.prediction {
+  font-weight: bold;
+  font-size: 2rem;
+  transition: color 0.3s ease;
+}
+
+.prediction-pro {
+  color: #4CAF50;
+  animation: flicker 0.4s;
+  font-size: 15rem;
+}
+
+.prediction-amateur {
+  color: #ff4444;
+  animation: flicker 0.4s;
+  font-size: 15rem;
+}
+
+@keyframes flicker {
+  0% { opacity: 1; }
+  50% { opacity: 0.2; }
+  100% { opacity: 1; }
+}
+
+
+.circle-container {
+  position: relative;
+  width: 120px;
+  height: 120px;
+  margin-right: 20px;
+}
+
+.progress-ring__background {
+  fill: none;
+  stroke: #eee;
+  stroke-width: 12;
+}
+
+.progress-ring__circle {
+  fill: none;
+  stroke: #4caf50;
+  stroke-width: 12;
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  stroke-dasharray: 400.292; /* 2 * π * r */
+  stroke-dashoffset: 400.292;
+  transition: stroke-dashoffset 0.4s ease;
+}
+
+.progress-text {
+  top: 60%;
+  left: 58%;
+  transform: translate(-50%, -50%);
+  position: absolute;
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.progress-ring__circle.pro {
+  stroke: #4CAF50; 
+}
+
+.progress-ring__circle.amateur {
+  stroke: #ff4444;
+}
+
+
+
+.result-video-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+  gap: 2rem;
+  max-width: 100%;
+  max-height: 100%;
+}
+
+@media (max-width: 768px) {
+  .result-video-wrapper {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .prediction-box {
+    width: 800px
+
+  }
+
+  .video-wrapper {
+    width: 100%;
+    max-width: 90%;
+  }
+}
+
+video {
+  width: 100%;
+  max-height: auto;
+  border-radius: 8px;
+  object-fit: contain;
+  z-index: 1;
+}
+
+.prediction-box {
+  background-color: #000;
+  color: #fff;
+  border-radius: 10px;
+  flex: 1 1 280px; 
+  display: flex;
+  gap: 10px;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1 1 600px;
+  width: 350px;
+  max-width: 800px;
+  height: 100%
+}
+
+#predictionText {
+  font-size: 5rem;
+  font-weight: 900;
+}
+
+.r-video-wrapper {
+  flex: 1 1 600px;
+  max-width: 100%;
+  height: auto;
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.3);
+}
