@@ -189,9 +189,47 @@ function selectModel(type) {
 
 const uploadForm = document.getElementById("uploadForm");
 
+// uploadForm.addEventListener("submit", function (e) {
+//   if (e.submitter && e.submitter.id === "uploadButton") {
+//     document.getElementById("loadingOverlay").hidden = false;
+//   }
+// });
+
 uploadForm.addEventListener("submit", function (e) {
   if (e.submitter && e.submitter.id === "uploadButton") {
-    document.getElementById("loadingOverlay").hidden = false;
+    const overlay = document.getElementById("loadingOverlay");
+    const message = overlay.querySelector("p");
+    overlay.hidden = false;
+
+    const type = document.getElementById('modelType').value
+    const start = parseFloat(startSlider.value);
+    const end = parseFloat(endSlider.value);
+    const durationTime = end - start;
+    let time = 1 * 1000
+
+    if (type === 'lite') {
+      time = Math.ceil(durationTime + 8) * 1000
+
+    } else {
+      time = Math.ceil(durationTime * 2 + 13) * 1000
+    }
+
+    const steps = [
+      { text: "Downloading video...", duration: time/10},
+      { text: "Trimming video...", duration: time/10 },
+      { text: "Creating landmarks...", duration: time/5 },
+      { text: "Making prediction...", duration: time/6 },
+      { text: "Drawing landmarks...", duration: time/2 }
+    ];
+
+    let totalTime = 0;
+
+    steps.forEach(step => {
+      totalTime += step.duration;
+      setTimeout(() => {
+        message.textContent = step.text;
+      }, totalTime - step.duration);
+    });
   }
 });
 

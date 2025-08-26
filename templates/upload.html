@@ -81,7 +81,10 @@
     </section>
     </div>
 
-    <p>Developed by Michael Capriotti (using Google's MediaPipe software)</p>
+    <p>
+      Developed by Michael Capriotti (using Google's MediaPipe software). Learn More About the Proccess ->
+      <a href="https://github.com/mcapriotti1/Golf_Swing" target="_blank">Github</a>
+    </p>
     <a href="https://www.flaticon.com/free-icons/golf" target="_blank" title="golf icons">Golf icon created by Smashicons - Flaticon</a>
   </div>
 
@@ -91,6 +94,15 @@
         <p >Analyzing your swing...</p>
       </div>
   </div>
+
+  {% if error %}
+  <div id="errorOverlay">
+    <div class="error-overlay">
+      <h3>{{ error }}</h3>
+      <button onclick="document.getElementById('errorOverlay').style.display='none'">Close</button>
+    </div>
+  </div>
+  {% endif %}
 
   <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 </body>

@@ -9,8 +9,6 @@ app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 import joblib
 
-print("Flask is looking in this template folder:", app.template_folder)
-
 model = joblib.load("models/golf_swing_model.pkl")
 JSON_PATH = "static/predictions.json"
 
@@ -23,46 +21,50 @@ def upload_file():
         cleanup_old_files("trimmed_videos", max_age_minutes=1)
         cleanup_old_files("static/landmarks_drawn_videos", max_age_minutes=2)
 
-        # check if the post request has the file part
+        print("-" * 30, "Downloading Video", "-" * 30)
+
         if 'video' not in request.files:
-            return "No file part", 400
+            cleanup_folder("uploads")
+            return render_template("upload.html", error="File Error, make sure to upload a mp4 video.")
 
         file = request.files['video']
         start = request.form["start"]
         end = request.form["end"]
         speed = request.form["model_type"]
-        print("*" * 100)
-        print(speed)
 
         if file.filename == '':
-            return "No selected file", 400
+            cleanup_folder("uploads")
+            return render_template("upload.html", error="File Error, make sure to upload a mp4 video.")
 
         if file and allowed_file(file.filename):
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(filepath)
 
+            print("-" * 30, "Trimming Video", "-" * 30)
             trimmed = trim_video(filepath, start, end)
+            cleanup_folder("uploads")
             if not trimmed:
-                return "Your video is too long, upload a video under 30 seconds."
+                return render_template("upload.html", error="Your video is too long, upload a video under 30 seconds.")
 
             # Run your pipeline here
             if speed == "lite":
                 fast = True
             else:
                 fast = False
-            drawn_video_path = draw_landmarks(trimmed, fast=fast)
+            print("-" * 30, "Creating Landmarks", "-" * 30)
             landmarks = create_landmarks(trimmed)
             landmarks = normalize_landmarks(landmarks)
 
             if not landmarks:
-                return "Your body could not be detected, try uploading a clearer video.", 400
-
+                return render_template("upload.html", error="Your body could not be detected, try uploading a clear video of the swing")
+            
             flattened_landmarks = np.array(flatten_video(landmarks))
             if len(flattened_landmarks) != 67530:
-                return "Video too short, or your body could not be detected, try uploading a clearer video.", 400
+                return render_template("upload.html", error="Video too short, or your body could not be detected, try uploading a clearer video.")
 
             array = flattened_landmarks.reshape(1, -1)
 
+            print("-" * 30, "Making Prediction", "-" * 30)
             prediction = model.predict(array)
             if hasattr(model, "predict_proba"):
                 probs = model.predict_proba(array)
@@ -77,15 +79,17 @@ def upload_file():
             else:
                 final_prediction = "Amateur"
 
+            print("-" * 30, "Drawing Landmarks", "-" * 30)
+            drawn_video_path = draw_landmarks(trimmed, fast=fast)
             save_prediction(JSON_PATH, trimmed, final_prediction, confidence)
             clear_old_videos(JSON_PATH)
-            cleanup_folder("uploads")
             
             trimmed_filename = os.path.basename(trimmed)
             return redirect(url_for('show_result', video_id=trimmed_filename))
 
         else:
-            return "Unsupported file type. Please upload an mp4 video.", 400
+            cleanup_folder("uploads")
+            return render_template("upload.html", error="Unsupported file type. Please upload an mp4 video.")
 
     return render_template('upload.html')
 
