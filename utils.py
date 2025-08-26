@@ -43,20 +43,30 @@ def trim_video(video_path, start_time, end_time, output_path=None):
     
     return output_path
 
-def create_landmarks(video_path, num_frames = 30):
-    # Setup MediaPipe
+def create_landmarks(video_path, num_frames=30):
+    """
+    Extract pose landmarks from a video using MediaPipe Pose Landmarker.
+
+    Parameters:
+        video_path (str): Path to the video file.
+        num_frames (int): Number of evenly spaced frames to extract (default 30).
+
+    Returns:
+        list: List of frames, each containing a list of landmarks with x, y, z,
+                visibility, and presence values.
+    """
+
+    # MediaPipe setup
     BaseOptions = mp.tasks.BaseOptions
     PoseLandmarker = mp.tasks.vision.PoseLandmarker
     PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
     VisionRunningMode = mp.tasks.vision.RunningMode
 
+    # Load the pre-trained pose landmarker model
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_heavy.task")
-
-    # model_path = r"C:\Users\Micha\Golf_Swing\website\models\pose_landmarker_heavy.task"
-
     with open(model_path, "rb") as f:
-      model_data = f.read()
+        model_data = f.read()
 
     options = PoseLandmarkerOptions(
         base_options=BaseOptions(model_asset_buffer=model_data),
@@ -64,16 +74,16 @@ def create_landmarks(video_path, num_frames = 30):
         num_poses=1
     )
 
+    # Open video and select frames evenly spaced across the video
     cap = cv2.VideoCapture(video_path)
     fps = cap.get(cv2.CAP_PROP_FPS)
-
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     selected_indices = np.linspace(0, total_frames - 1, num=num_frames, dtype=int)
     selected_frames = set(selected_indices)
 
     landmarks = []
 
-
+    # Process video frames with MediaPipe
     with PoseLandmarker.create_from_options(options) as landmarker:
         frame_idx = 0
         while cap.isOpened():
@@ -82,11 +92,13 @@ def create_landmarks(video_path, num_frames = 30):
                 break
 
             if frame_idx in selected_frames:
+                # Convert frame to RGB and prepare for MediaPipe
                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
                 timestamp_ms = int((frame_idx / fps) * 1000)
-                result = landmarker.detect_for_video(mp_image, timestamp_ms)
 
+                # Detect pose landmarks
+                result = landmarker.detect_for_video(mp_image, timestamp_ms)
                 if result.pose_landmarks:
                     frame_landmarks = [{
                         'x': lm.x,
@@ -95,14 +107,13 @@ def create_landmarks(video_path, num_frames = 30):
                         'visibility': lm.visibility,
                         'presence': lm.presence
                     } for lm in result.pose_landmarks[0]]
-
                     landmarks.append(frame_landmarks)
 
             frame_idx += 1
 
     cap.release()
-
     return landmarks
+
 
 def draw_landmarks(video_path, output_dir="static/landmarks_drawn_videos", fast=False):
     BaseOptions = mp.tasks.BaseOptions
