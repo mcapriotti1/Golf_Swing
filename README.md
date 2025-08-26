@@ -19,6 +19,7 @@ This project analyzes golf swings and classifies them as either **Pro** or **Ama
 - Extracted 30 evenly spaced frames per video.
 - Key body parts used for analysis:
 
+```python
 KEY_BODY_PARTS = [
 "Left Shoulder", "Right Shoulder",
 "Left Elbow", "Right Elbow",
@@ -28,22 +29,23 @@ KEY_BODY_PARTS = [
 "Nose",
 "Left Knee", "Right Knee",
 ]
-
+```
 
 - Positions normalized relative to **left hip**.
 - Calculated **velocities** for each body part.
 - Computed specific **joint angles**:
 
-
-joints_to_compute = [
-("Right Shoulder", "Right Elbow", "Right Index"),
-("Left Hip", "Left Knee", "Left Foot Index"),
-("Right Hip", "Right Knee", "Right Foot Index"),
-("Left Shoulder", "Left Hip", "Left Foot Index"),
-("Right Shoulder", "Right Hip", "Right Foot Index"),
-("Left Elbow", "Left Shoulder", "Left Hip"),
-("Right Elbow", "Right Shoulder", "Right Hip"),
+```python
+  joints_to_compute = [
+  ("Right Shoulder", "Right Elbow", "Right Index"),
+  ("Left Hip", "Left Knee", "Left Foot Index"),
+  ("Right Hip", "Right Knee", "Right Foot Index"),
+  ("Left Shoulder", "Left Hip", "Left Foot Index"),
+  ("Right Shoulder", "Right Hip", "Right Foot Index"),
+  ("Left Elbow", "Left Shoulder", "Left Hip"),
+  ("Right Elbow", "Right Shoulder", "Right Hip"),
 ]
+```
 
 
 - Included **presence** and **visibility** data from MediaPipe.
@@ -66,3 +68,4 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratif
 model.fit(X_train, y_train)
 y_pred = model.predict(X_test)
 print(classification_report(y_test, y_pred))
+```
