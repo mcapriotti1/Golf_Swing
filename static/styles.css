@@ -58,6 +58,12 @@ p {
   text-align: center;
 }
 
+a {
+  color: white;
+  font-size: 1rem;
+  text-align: center;
+}
+
 label {
   display: block;
   margin: 1rem 0 0.5rem;

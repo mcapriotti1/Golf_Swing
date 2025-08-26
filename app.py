@@ -3,14 +3,16 @@ import json
 from flask import Flask, request, render_template, redirect, url_for
 import numpy as np
 from collections import Counter
-from website.utils import flatten_video, trim_video, draw_landmarks, normalize_landmarks, create_landmarks, cleanup_old_files, save_prediction, clear_old_videos, cleanup_folder
+from utils import flatten_video, trim_video, draw_landmarks, normalize_landmarks, create_landmarks, cleanup_old_files, save_prediction, clear_old_videos, cleanup_folder
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = 'website/uploads'
+app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 import joblib
 
-model = joblib.load("website/models/golf_swing_model.pkl")
-JSON_PATH = "website/static/predictions.json"
+print("Flask is looking in this template folder:", app.template_folder)
+
+model = joblib.load("models/golf_swing_model.pkl")
+JSON_PATH = "static/predictions.json"
 
 def allowed_file(filename):
     return '.' in filename and filename.lower().endswith('.mp4')
@@ -18,8 +20,8 @@ def allowed_file(filename):
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
-        cleanup_old_files("website/trimmed_videos", max_age_minutes=1)
-        cleanup_old_files("website/static/landmarks_drawn_videos", max_age_minutes=2)
+        cleanup_old_files("trimmed_videos", max_age_minutes=1)
+        cleanup_old_files("static/landmarks_drawn_videos", max_age_minutes=2)
 
         # check if the post request has the file part
         if 'video' not in request.files:
@@ -77,7 +79,7 @@ def upload_file():
 
             save_prediction(JSON_PATH, trimmed, final_prediction, confidence)
             clear_old_videos(JSON_PATH)
-            cleanup_folder("website/uploads")
+            cleanup_folder("uploads")
             
             trimmed_filename = os.path.basename(trimmed)
             return redirect(url_for('show_result', video_id=trimmed_filename))

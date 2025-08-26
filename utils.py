@@ -23,7 +23,7 @@ def trim_video(video_path, start_time, end_time, output_path=None):
     
     if output_path is None:
         timestamp = int(time.time() * 1000)
-        output_dir = "website/trimmed_videos"
+        output_dir = "trimmed_videos"
         os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, f"video_{timestamp}.mp4")
     
@@ -104,7 +104,7 @@ def create_landmarks(video_path, num_frames = 30):
 
     return landmarks
 
-def draw_landmarks(video_path, output_dir="website/static/landmarks_drawn_videos", fast=False):
+def draw_landmarks(video_path, output_dir="static/landmarks_drawn_videos", fast=False):
     BaseOptions = mp.tasks.BaseOptions
     PoseLandmarker = mp.tasks.vision.PoseLandmarker
     PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
