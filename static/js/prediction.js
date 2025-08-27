@@ -140,12 +140,17 @@ document.addEventListener('DOMContentLoaded', function () {
 //   })
 //   .catch(err => console.error("Failed to load landmarks:", err));
 const video = document.getElementById("video");
+
+// Apply playsinline only on mobile/iOS
+if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+  video.setAttribute("playsinline", "");
+}
+
 const canvas = document.getElementById("overlay");
 const ctx = canvas.getContext("2d");
 
 function updateCanvasSize() {
   const rect = video.getBoundingClientRect();
-  const containerRect = video.parentElement.getBoundingClientRect(); // container div
   const videoAspect = video.videoWidth / video.videoHeight;
   const rectAspect = rect.width / rect.height;
 
@@ -165,26 +170,26 @@ function updateCanvasSize() {
 
   canvas.width = contentWidth;
   canvas.height = contentHeight;
-  canvas.style.top = offsetY + "px"; // relative to container
-  canvas.style.left = offsetX + "px"; // relative to container
-  canvas.style.pointerEvents = "none";
+  canvas.style.top = offsetY + "px";
+  canvas.style.left = offsetX + "px";
 
-  return { contentWidth, contentHeight };
+  return { contentWidth, contentHeight, offsetX, offsetY };
 }
 
 fetch("/static/video_landmarks.json")
   .then(res => res.json())
-  .then(landmarksData => {
-    const validFrames = landmarksData.filter(f => f.landmarks && f.landmarks.length);
+  .then(data => {
+    const validFrames = data.filter(f => f.landmarks && f.landmarks.length);
 
     function drawLandmarks() {
-      const { contentWidth, contentHeight } = updateCanvasSize();
+      const { contentWidth, contentHeight, offsetX, offsetY } = updateCanvasSize();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       if (!video.paused && !video.ended) {
         const time = video.currentTime;
         let frameData = null;
         let minDiff = Infinity;
+
         for (let i = 0; i < validFrames.length; i++) {
           const diff = Math.abs(validFrames[i].timestamp - time);
           if (diff < minDiff) {
@@ -195,8 +200,8 @@ fetch("/static/video_landmarks.json")
 
         if (frameData) {
           frameData.landmarks.forEach(lm => {
-            const x = lm.x * contentWidth;
-            const y = lm.y * contentHeight;
+            const x = offsetX + lm.x * contentWidth;
+            const y = offsetY + lm.y * contentHeight;
             ctx.beginPath();
             ctx.arc(x, y, 5, 0, 2 * Math.PI);
             ctx.fillStyle = "lime";
@@ -208,8 +213,8 @@ fetch("/static/video_landmarks.json")
       requestAnimationFrame(drawLandmarks);
     }
 
-    video.addEventListener("play", () => drawLandmarks());
-    window.addEventListener("resize", () => updateCanvasSize());
+    video.addEventListener("play", drawLandmarks);
+    window.addEventListener("resize", updateCanvasSize);
   })
   .catch(err => console.error(err));
 
