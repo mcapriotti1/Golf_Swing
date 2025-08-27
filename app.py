@@ -5,7 +5,7 @@ import json
 from flask import Flask, request, render_template, redirect, url_for
 import numpy as np
 from collections import Counter
-from utils import flatten_video, trim_video, draw_landmarks, normalize_landmarks, create_landmarks, cleanup_old_files, save_prediction, clear_old_videos, cleanup_folder, copy_and_reencode_video
+from utils import flatten_video, trim_video, normalize_landmarks, create_landmarks, cleanup_old_files, save_prediction, clear_old_videos, cleanup_folder, copy_and_reencode_video, extract_landmarks
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -105,6 +105,10 @@ def upload_file():
             # drawn_video_path = draw_landmarks(trimmed, fast=fast)
             print("COPYING AND RENCODING")
             # copy_and_reencode_video(drawn_video_path, "static/landmarks_drawn_videos")
+            landmarks_data = extract_landmarks(trimmed, fast)
+            import json
+            with open("static/video_landmarks.json", "w") as f:
+                json.dump(landmarks_data, f)
             save_prediction(JSON_PATH, trimmed, final_prediction, confidence)
             clear_old_videos(JSON_PATH)
             
@@ -116,7 +120,6 @@ def upload_file():
             return render_template("upload.html", error="Unsupported file type. Please upload an mp4 video.")
 
     return render_template('upload.html')
-
 @app.route('/result/<video_id>')
 def show_result(video_id):
     # Load predictions json
@@ -133,7 +136,7 @@ def show_result(video_id):
     prediction = prediction_data['prediction']
     confidence = prediction_data['confidence']
 
-    annotated_video_url = f"landmarks_drawn_videos/{video_id}"
+    annotated_video_url = f"trimmed_videos/{video_id}"
 
     return render_template(
         'result.html',
