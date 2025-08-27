@@ -1,26 +1,10 @@
 {
-  "video_1756258681839.mp4": {
+  "video_1756261165847.mp4": {
     "prediction": "Pro",
-    "confidence": 0.81
+    "confidence": 0.96
   },
-  "video_1756258721907.mp4": {
+  "video_1756261187600.mp4": {
     "prediction": "Pro",
-    "confidence": 0.81
-  },
-  "video_1756258780249.mp4": {
-    "prediction": "Pro",
-    "confidence": 0.83
-  },
-  "video_1756258823307.mp4": {
-    "prediction": "Pro",
-    "confidence": 0.83
-  },
-  "video_1756258917833.mp4": {
-    "prediction": "Pro",
-    "confidence": 0.81
-  },
-  "video_1756259195568.mp4": {
-    "prediction": "Amateur",
-    "confidence": 0.71
+    "confidence": 0.84
   }
 }
