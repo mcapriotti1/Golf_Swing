@@ -10,6 +10,20 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 import joblib
+import threading, time
+import psutil, os
+
+def log_memory_usage(note=""):
+    process = psutil.Process(os.getpid())
+    mem_info = process.memory_info()
+    print(f"[MEMORY] {note} RSS={mem_info.rss / (1024*1024):.2f} MB, VMS={mem_info.vms / (1024*1024):.2f} MB")
+
+def monitor_memory():
+    while True:
+        log_memory_usage("Live Monitor")
+        time.sleep(5)
+
+threading.Thread(target=monitor_memory, daemon=True).start()
 
 model = joblib.load("models/golf_swing_model.pkl")
 JSON_PATH = "static/predictions.json"
