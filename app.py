@@ -29,7 +29,7 @@ model = joblib.load("models/golf_swing_model.pkl")
 JSON_PATH = "static/predictions.json"
 
 def allowed_file(filename):
-    return '.' in filename and filename.lower().endswith('.mp4')
+    return '.' in filename and filename.lower().endswith('.mp4', ".mov")
 
 os.makedirs("static", exist_ok=True)
 os.makedirs("static/trimmed_videos", exist_ok=True)
