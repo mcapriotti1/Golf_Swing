@@ -17,10 +17,15 @@ JSON_PATH = "static/predictions.json"
 def allowed_file(filename):
     return '.' in filename and filename.lower().endswith('.mp4')
 
+print("UPLOAD_FOLDER exists:", os.path.exists(app.config['UPLOAD_FOLDER']))
+print("Trimmed videos exists:", os.path.exists("static/trimmed_videos"))
+print("Landmarks videos exists:", os.path.exists("static/landmarks_drawn_videos"))
+print("JSON path exists:", os.path.exists(JSON_PATH))
+
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
-        cleanup_old_files("trimmed_videos", max_age_minutes=1)
+        cleanup_old_files("static/trimmed_videos", max_age_minutes=1)
         cleanup_old_files("static/landmarks_drawn_videos", max_age_minutes=2)
 
         print("-" * 30, "Downloading Video", "-" * 30)

@@ -27,7 +27,7 @@ def trim_video(video_path, start_time, end_time, output_path=None):
     
     if output_path is None:
         timestamp = int(time.time() * 1000)
-        output_dir = "trimmed_videos"
+        output_dir = "static/trimmed_videos"
         os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, f"video_{timestamp}.mp4")
     
