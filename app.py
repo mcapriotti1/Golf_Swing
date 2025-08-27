@@ -17,7 +17,11 @@ JSON_PATH = "static/predictions.json"
 def allowed_file(filename):
     return '.' in filename and filename.lower().endswith('.mp4')
 
+os.makedirs("static", exist_ok=True)
+os.makedirs("static/trimmed_videos", exist_ok=True)
+os.makedirs("static/landmarks_drawn_videos", exist_ok=True)
 print("UPLOAD_FOLDER exists:", os.path.exists(app.config['UPLOAD_FOLDER']))
+print("Static:", os.path.exists("static"))
 print("Trimmed videos exists:", os.path.exists("static/trimmed_videos"))
 print("Landmarks videos exists:", os.path.exists("static/landmarks_drawn_videos"))
 print("JSON path exists:", os.path.exists(JSON_PATH))
