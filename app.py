@@ -5,7 +5,7 @@ import json
 from flask import Flask, request, render_template, redirect, url_for
 import numpy as np
 from collections import Counter
-from utils import flatten_video, trim_video, draw_landmarks, normalize_landmarks, create_landmarks, cleanup_old_files, save_prediction, clear_old_videos, cleanup_folder
+from utils import flatten_video, trim_video, draw_landmarks, normalize_landmarks, create_landmarks, cleanup_old_files, save_prediction, clear_old_videos, cleanup_folder, copy_and_reencode_video
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -20,17 +20,14 @@ def allowed_file(filename):
 os.makedirs("static", exist_ok=True)
 os.makedirs("static/trimmed_videos", exist_ok=True)
 os.makedirs("static/landmarks_drawn_videos", exist_ok=True)
-print("UPLOAD_FOLDER exists:", os.path.exists(app.config['UPLOAD_FOLDER']))
-print("Static:", os.path.exists("static"))
-print("Trimmed videos exists:", os.path.exists("static/trimmed_videos"))
-print("Landmarks videos exists:", os.path.exists("static/landmarks_drawn_videos"))
-print("JSON path exists:", os.path.exists(JSON_PATH))
+os.makedirs("static/landmarks_drawn_videos_corrupt", exist_ok=True)
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
         cleanup_old_files("static/trimmed_videos", max_age_minutes=1)
         cleanup_old_files("static/landmarks_drawn_videos", max_age_minutes=2)
+        cleanup_old_files("static/landmarks_drawn_videos_corrupt", max_age_minutes=1)
 
         print("-" * 30, "Downloading Video", "-" * 30)
 
@@ -92,6 +89,7 @@ def upload_file():
 
             print("-" * 30, "Drawing Landmarks", "-" * 30)
             drawn_video_path = draw_landmarks(trimmed, fast=fast)
+            copy_and_reencode_video(drawn_video_path, "static/landmarks_drawn_videos")
             save_prediction(JSON_PATH, trimmed, final_prediction, confidence)
             clear_old_videos(JSON_PATH)
             
