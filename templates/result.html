@@ -36,7 +36,7 @@
 
 
   <div style="position: relative; display: inline-block;">
-    <video id="video" class="r-video-wrapper" controls>
+    <video id="video" class="r-video-wrapper" autoplay loop muted>
       <source src="{{ url_for('static', filename=annotated_video_url) }}" type="video/mp4" />
       Your browser does not support the video tag.
     </video>

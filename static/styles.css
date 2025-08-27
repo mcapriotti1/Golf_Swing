@@ -299,7 +299,7 @@ input[type="range"]::-moz-range-thumb {
 }
 
 
-@media (min-width: 768px) {
+@media (min-width: 1000px) {
   .video-form-section {
     flex-direction: row;
     align-items: flex-start;
