@@ -215,6 +215,40 @@ def draw_landmarks(video_path, output_dir="static/landmarks_drawn_videos_corrupt
 
     return f"static/landmarks_drawn_videos_corrupt/{base_filename}"
 
+import subprocess
+
+def copy_and_reencode_video(video_path, output_dir):
+    print(video_path)
+    """
+    Re-encodes a video to H.264 MP4 for browser compatibility (memory efficient).
+    
+    Args:
+        video_path (str): Path to the input video.
+        output_dir (str): Directory where the re-encoded video should be saved.
+    
+    Returns:
+        str: Full path to the re-encoded video.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    base_filename = os.path.basename(video_path)
+    output_path = os.path.join(output_dir, base_filename)
+
+    command = [
+        "ffmpeg",
+        "-y",  # overwrite if file exists
+        "-i", video_path,
+        "-c:v", "libx264",  # H.264 codec
+        "-preset", "fast",  # balance speed and size
+        "-c:a", "aac",      # audio codec
+        "-movflags", "+faststart",  # better streaming in browsers
+        output_path
+    ]
+
+    subprocess.run(command, check=True)
+
+    return output_path
+
+
 
 
 # def draw_landmarks(video_path, output_dir="static/landmarks_drawn_videos", fast=False):
