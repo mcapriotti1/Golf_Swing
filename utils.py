@@ -137,7 +137,7 @@ def create_landmarks(video_path, num_frames=30):
 
     # Load the pre-trained pose landmarker model
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_lite.task")
+    model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_heavy.task")
     with open(model_path, "rb") as f:
         model_data = f.read()
 
@@ -226,7 +226,7 @@ def extract_landmarks(video_path, fast=False):
     VisionRunningMode = mp_tasks.vision.RunningMode
 
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_lite.task")
+    model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_heavy.task")
     with open(model_path, "rb") as f:
         model_data = f.read()
 
@@ -239,7 +239,7 @@ def extract_landmarks(video_path, fast=False):
     landmarks_list = []
     frame_idx = 0
     last_result = None
-    target_interval_ms = 100 if fast else 1  # detect every 0.3s in fast mode
+    target_interval_ms = 100 if fast else 20  # detect every 0.3s in fast mode
 
     with PoseLandmarker.create_from_options(options) as landmarker:
         while True:
