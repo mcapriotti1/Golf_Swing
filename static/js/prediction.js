@@ -69,77 +69,149 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
   }
-
   
+// const video = document.getElementById("video");
+// const canvas = document.getElementById("overlay");
+// const ctx = canvas.getContext("2d");
+
+// function resizeCanvas() {
+//   canvas.width = video.clientWidth;
+//   canvas.height = video.clientHeight;
+//   canvas.style.top = video.offsetTop + "px";
+//   canvas.style.left = video.offsetLeft + "px";
+//   canvas.style.pointerEvents = "none";
+// }
+
+// video.addEventListener("loadedmetadata", resizeCanvas);
+// window.addEventListener("resize", resizeCanvas);
+
+// // Fetch precomputed landmarks
+// fetch("/static/video_landmarks.json")
+//   .then(res => res.json())
+//   .then(landmarksData => {
+
+//     // Only keep frames with landmarks
+//     const validFrames = landmarksData.filter(f => f.landmarks && f.landmarks.length);
+
+//     function drawLandmarks() {
+//       resizeCanvas(); // ensure canvas always matches video size
+
+//       if (video.paused || video.ended) {
+//         requestAnimationFrame(drawLandmarks);
+//         return;
+//       }
+
+//       const time = video.currentTime;
+
+//       // Find the closest frame with landmarks
+//       let frameData = null;
+//       let minDiff = Infinity;
+
+//       for (let i = 0; i < validFrames.length; i++) {
+//         const diff = Math.abs(validFrames[i].timestamp - time);
+//         if (diff < minDiff) {
+//           minDiff = diff;
+//           frameData = validFrames[i];
+//         }
+//       }
+
+//       // Clear previous drawings
+//       ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+//       // Draw landmarks
+//       if (frameData) {
+//         frameData.landmarks.forEach(lm => {
+//           const x = lm.x * video.clientWidth;
+//           const y = lm.y * video.clientHeight;
+//           ctx.beginPath();
+//           ctx.arc(x, y, 5, 0, 2 * Math.PI);
+//           ctx.fillStyle = "lime";
+//           ctx.fill();
+//         });
+//       }
+
+//       requestAnimationFrame(drawLandmarks);
+//     }
+
+//     video.addEventListener("play", () => {
+//       drawLandmarks();
+//     });
+
+//   })
+//   .catch(err => console.error("Failed to load landmarks:", err));
 const video = document.getElementById("video");
 const canvas = document.getElementById("overlay");
 const ctx = canvas.getContext("2d");
 
-function resizeCanvas() {
-  canvas.width = video.clientWidth;
-  canvas.height = video.clientHeight;
-  canvas.style.top = video.offsetTop + "px";
-  canvas.style.left = video.offsetLeft + "px";
+function updateCanvasSize() {
+  const rect = video.getBoundingClientRect();
+  const containerRect = video.parentElement.getBoundingClientRect(); // container div
+  const videoAspect = video.videoWidth / video.videoHeight;
+  const rectAspect = rect.width / rect.height;
+
+  let contentWidth, contentHeight, offsetX, offsetY;
+
+  if (rectAspect > videoAspect) {
+    contentHeight = rect.height;
+    contentWidth = videoAspect * contentHeight;
+    offsetX = (rect.width - contentWidth) / 2;
+    offsetY = 0;
+  } else {
+    contentWidth = rect.width;
+    contentHeight = contentWidth / videoAspect;
+    offsetX = 0;
+    offsetY = (rect.height - contentHeight) / 2;
+  }
+
+  canvas.width = contentWidth;
+  canvas.height = contentHeight;
+  canvas.style.top = offsetY + "px"; // relative to container
+  canvas.style.left = offsetX + "px"; // relative to container
   canvas.style.pointerEvents = "none";
+
+  return { contentWidth, contentHeight };
 }
 
-video.addEventListener("loadedmetadata", resizeCanvas);
-window.addEventListener("resize", resizeCanvas);
-
-// Fetch precomputed landmarks
 fetch("/static/video_landmarks.json")
   .then(res => res.json())
   .then(landmarksData => {
-
-    // Only keep frames with landmarks
     const validFrames = landmarksData.filter(f => f.landmarks && f.landmarks.length);
 
     function drawLandmarks() {
-      resizeCanvas(); // ensure canvas always matches video size
-
-      if (video.paused || video.ended) {
-        requestAnimationFrame(drawLandmarks);
-        return;
-      }
-
-      const time = video.currentTime;
-
-      // Find the closest frame with landmarks
-      let frameData = null;
-      let minDiff = Infinity;
-
-      for (let i = 0; i < validFrames.length; i++) {
-        const diff = Math.abs(validFrames[i].timestamp - time);
-        if (diff < minDiff) {
-          minDiff = diff;
-          frameData = validFrames[i];
-        }
-      }
-
-      // Clear previous drawings
+      const { contentWidth, contentHeight } = updateCanvasSize();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw landmarks
-      if (frameData) {
-        frameData.landmarks.forEach(lm => {
-          const x = lm.x * video.clientWidth;
-          const y = lm.y * video.clientHeight;
-          ctx.beginPath();
-          ctx.arc(x, y, 5, 0, 2 * Math.PI);
-          ctx.fillStyle = "lime";
-          ctx.fill();
-        });
+      if (!video.paused && !video.ended) {
+        const time = video.currentTime;
+        let frameData = null;
+        let minDiff = Infinity;
+        for (let i = 0; i < validFrames.length; i++) {
+          const diff = Math.abs(validFrames[i].timestamp - time);
+          if (diff < minDiff) {
+            minDiff = diff;
+            frameData = validFrames[i];
+          }
+        }
+
+        if (frameData) {
+          frameData.landmarks.forEach(lm => {
+            const x = lm.x * contentWidth;
+            const y = lm.y * contentHeight;
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = "lime";
+            ctx.fill();
+          });
+        }
       }
 
       requestAnimationFrame(drawLandmarks);
     }
 
-    video.addEventListener("play", () => {
-      drawLandmarks();
-    });
-
+    video.addEventListener("play", () => drawLandmarks());
+    window.addEventListener("resize", () => updateCanvasSize());
   })
-  .catch(err => console.error("Failed to load landmarks:", err));
+  .catch(err => console.error(err));
 
 });
 
