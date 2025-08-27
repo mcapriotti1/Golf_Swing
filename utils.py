@@ -12,6 +12,7 @@ import json
 import cv2
 import imageio
 from PIL import Image, ImageDraw
+import subprocess
 
 """ ------------------------------ EXTRACTING LANDMARK DATA --------------------------------------------- """
 
@@ -63,10 +64,10 @@ def trim_video(video_path, start_time, end_time, output_path=None):
     # Use ffmpeg to trim without re-encoding (super fast, low memory)
     cmd = [
         "ffmpeg", "-y",
-        "-i", video_path,
         "-ss", str(start),
-        "-to", str(end),
-        "-c", "copy",  # copy streams, don’t re-encode
+        "-i", video_path,
+        "-t", str(end-start),
+        "-c", "copy",
         output_path
     ]
     subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -74,31 +75,46 @@ def trim_video(video_path, start_time, end_time, output_path=None):
     return output_path
 
 def copy_and_reencode_video(video_path, output_dir):
-    """
-    Copies and re-encodes a video to ensure browser compatibility (H.264 MP4).
-    
-    Args:
-        video_path (str): Path to the original video.
-        output_dir (str): Directory to save the re-encoded video.
-    
-    Returns:
-        str: Full path to the re-encoded video.
-    """
-    print(video_path)
     os.makedirs(output_dir, exist_ok=True)
-    base_filename = os.path.basename(video_path)
-    output_path = os.path.join(output_dir, base_filename)
+    output_path = os.path.join(output_dir, os.path.basename(video_path))
     
-    with VideoFileClip(video_path) as clip:
-        clip.write_videofile(
-            output_path,
-            codec="libx264",
-            audio_codec="aac",
-            temp_audiofile="temp-audio.m4a",
-            remove_temp=True
-        )
+    subprocess.run([
+        "ffmpeg", "-i", video_path,
+        "-c:v", "libx264",
+        "-c:a", "aac",
+        "-y",  # overwrite if exists
+        output_path
+    ])
     
     return output_path
+
+
+# def copy_and_reencode_video(video_path, output_dir):
+#     """
+#     Copies and re-encodes a video to ensure browser compatibility (H.264 MP4).
+    
+#     Args:
+#         video_path (str): Path to the original video.
+#         output_dir (str): Directory to save the re-encoded video.
+    
+#     Returns:
+#         str: Full path to the re-encoded video.
+#     """
+#     print(video_path)
+#     os.makedirs(output_dir, exist_ok=True)
+#     base_filename = os.path.basename(video_path)
+#     output_path = os.path.join(output_dir, base_filename)
+    
+#     with VideoFileClip(video_path) as clip:
+#         clip.write_videofile(
+#             output_path,
+#             codec="libx264",
+#             audio_codec="aac",
+#             temp_audiofile="temp-audio.m4a",
+#             remove_temp=True
+#         )
+    
+#     return output_path
 
 def create_landmarks(video_path, num_frames=30):
     """
@@ -167,7 +183,6 @@ def create_landmarks(video_path, num_frames=30):
                     landmarks.append(frame_landmarks)
 
             frame_idx += 1
-
     cap.release()
     return landmarks
 
