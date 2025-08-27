@@ -2,12 +2,12 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import math
+import os
 os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0" 
 os.environ["OPENCV_VIDEOIO_PRIORITY_AVFOUNDATION"] = "0"
 from moviepy import VideoFileClip
 import time
 from pathlib import Path
-import os
 from moviepy import ImageSequenceClip
 import json
 
