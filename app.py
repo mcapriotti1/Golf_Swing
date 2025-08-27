@@ -102,9 +102,9 @@ def upload_file():
                 final_prediction = "Amateur"
 
             print("-" * 30, "Drawing Landmarks", "-" * 30)
-            drawn_video_path = draw_landmarks(trimmed, fast=fast)
+            # drawn_video_path = draw_landmarks(trimmed, fast=fast)
             print("COPYING AND RENCODING")
-            copy_and_reencode_video(drawn_video_path, "static/landmarks_drawn_videos")
+            # copy_and_reencode_video(drawn_video_path, "static/landmarks_drawn_videos")
             save_prediction(JSON_PATH, trimmed, final_prediction, confidence)
             clear_old_videos(JSON_PATH)
             
