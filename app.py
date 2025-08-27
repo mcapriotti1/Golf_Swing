@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use("Agg")
 import os
 import json
 from flask import Flask, request, render_template, redirect, url_for

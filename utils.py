@@ -2,6 +2,8 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import math
+os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0" 
+os.environ["OPENCV_VIDEOIO_PRIORITY_AVFOUNDATION"] = "0"
 from moviepy import VideoFileClip
 import time
 from pathlib import Path
@@ -376,7 +378,6 @@ def flatten_video(video):
                 point = landmark[idx]
                 flat.extend([point['x'], point['y'], point['z'], point['visibility'], point['presence']])
         flat.extend(compute_joint_angles(landmark))
-
         if prevFrame is not None:
             flat.extend(compute_velocity(prevFrame, frame))
         else:
