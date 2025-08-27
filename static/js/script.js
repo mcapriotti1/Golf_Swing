@@ -177,11 +177,11 @@ function selectModel(type) {
 
   buttons.forEach(btn => btn.classList.remove('active'));
   if (type === 'lite') {
-    time = Math.ceil(duration + 8)
+    time = Math.ceil(duration * 1.5 + 4)
     estimateText.textContent = `Estimated time: ~ ${time} seconds`;
     document.querySelector('.model-btn:nth-child(1)').classList.add('active');
   } else {
-    time = Math.ceil(duration * 2 + 13)
+    time = Math.ceil(duration * 2.2 + 4)
     estimateText.textContent = `Estimated time: ~ ${time} seconds`;
     document.querySelector('.model-btn:nth-child(2)').classList.add('active');
   }
@@ -208,18 +208,18 @@ uploadForm.addEventListener("submit", function (e) {
     let time = 1 * 1000
 
     if (type === 'lite') {
-      time = Math.ceil(durationTime + 8) * 1000
+      time = Math.ceil(durationTime * 1.5 + 4) * 1000
 
     } else {
-      time = Math.ceil(durationTime * 2 + 13) * 1000
+      time = Math.ceil(durationTime * 2.2 + 4) * 1000
     }
 
     const steps = [
-      { text: "Downloading video...", duration: time/10},
-      { text: "Trimming video...", duration: time/10 },
-      { text: "Creating landmarks...", duration: time/5 },
+      { text: "Downloading video...", duration: time/8},
+      { text: "Trimming video...", duration: time/8 },
+      { text: "Creating landmarks...", duration: time/4 },
       { text: "Making prediction...", duration: time/6 },
-      { text: "Drawing landmarks...", duration: time/2 }
+      { text: "Drawing landmarks...", duration: time/3 }
     ];
 
     let totalTime = 0;

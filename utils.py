@@ -10,6 +10,8 @@ import time
 from pathlib import Path
 from moviepy import ImageSequenceClip
 import json
+import imageio
+from PIL import Image, ImageDraw
 
 """ ------------------------------ EXTRACTING LANDMARK DATA --------------------------------------------- """
 
@@ -45,6 +47,151 @@ def trim_video(video_path, start_time, end_time, output_path=None):
     
     return output_path
 
+# def create_landmarks(video_path, num_frames=30):
+#     """
+#     Extract pose landmarks from a video using MediaPipe Pose Landmarker.
+
+#     Parameters:
+#         video_path (str): Path to the video file.
+#         num_frames (int): Number of evenly spaced frames to extract (default 30).
+
+#     Returns:
+#         list: List of frames, each containing a list of landmarks with x, y, z,
+#                 visibility, and presence values.
+#     """
+
+#     # MediaPipe setup
+#     BaseOptions = mp.tasks.BaseOptions
+#     PoseLandmarker = mp.tasks.vision.PoseLandmarker
+#     PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
+#     VisionRunningMode = mp.tasks.vision.RunningMode
+
+#     # Load the pre-trained pose landmarker model
+#     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+#     model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_heavy.task")
+#     with open(model_path, "rb") as f:
+#         model_data = f.read()
+
+#     options = PoseLandmarkerOptions(
+#         base_options=BaseOptions(model_asset_buffer=model_data),
+#         running_mode=VisionRunningMode.VIDEO,
+#         num_poses=1
+#     )
+
+#     # Open video and select frames evenly spaced across the video
+#     cap = cv2.VideoCapture(video_path)
+#     fps = cap.get(cv2.CAP_PROP_FPS)
+#     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+#     selected_indices = np.linspace(0, total_frames - 1, num=num_frames, dtype=int)
+#     selected_frames = set(selected_indices)
+
+#     landmarks = []
+
+#     # Process video frames with MediaPipe
+#     with PoseLandmarker.create_from_options(options) as landmarker:
+#         frame_idx = 0
+#         while cap.isOpened():
+#             success, frame = cap.read()
+#             if not success:
+#                 break
+
+#             if frame_idx in selected_frames:
+#                 # Convert frame to RGB and prepare for MediaPipe
+#                 frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+#                 mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
+#                 timestamp_ms = int((frame_idx / fps) * 1000)
+
+#                 # Detect pose landmarks
+#                 result = landmarker.detect_for_video(mp_image, timestamp_ms)
+#                 if result.pose_landmarks:
+#                     frame_landmarks = [{
+#                         'x': lm.x,
+#                         'y': lm.y,
+#                         'z': lm.z,
+#                         'visibility': lm.visibility,
+#                         'presence': lm.presence
+#                     } for lm in result.pose_landmarks[0]]
+#                     landmarks.append(frame_landmarks)
+
+#             frame_idx += 1
+
+#     cap.release()
+#     return landmarks
+
+
+# def draw_landmarks(video_path, output_dir="static/landmarks_drawn_videos", fast=False):
+#     BaseOptions = mp.tasks.BaseOptions
+#     PoseLandmarker = mp.tasks.vision.PoseLandmarker
+#     PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
+#     VisionRunningMode = mp.tasks.vision.RunningMode
+
+#     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+#     model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_lite.task")
+
+#     # model_path = r"C:\Users\Micha\Golf_Swing\website\models\pose_landmarker_lite.task"
+
+#     with open(model_path, "rb") as f:
+#         model_data = f.read()
+
+#     options = PoseLandmarkerOptions(
+#         base_options=BaseOptions(model_asset_buffer=model_data),
+#         running_mode=VisionRunningMode.VIDEO,
+#         num_poses=1
+#     )
+
+#     os.makedirs(output_dir, exist_ok=True)
+#     base_filename = os.path.basename(video_path)
+#     output_path = os.path.join(output_dir, base_filename)
+
+#     cap = cv2.VideoCapture(video_path)
+#     fps = cap.get(cv2.CAP_PROP_FPS)
+#     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+#     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+
+#     annotated_frames = []
+
+#     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+#     print("Total frames:", total_frames)
+
+#     target_interval_ms = 300 if fast else 33 
+#     last_detection_time = -target_interval_ms
+#     last_result = None
+
+#     with PoseLandmarker.create_from_options(options) as landmarker:
+#         frame_idx = 0
+#         while cap.isOpened():
+#             success, frame = cap.read()
+#             if not success:
+#                 break
+
+#             timestamp_ms = int((frame_idx / fps) * 1000)
+
+#             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+#             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
+
+#             if timestamp_ms - last_detection_time >= target_interval_ms:
+#                 last_result = landmarker.detect_for_video(mp_image, timestamp_ms)
+#                 last_detection_time = timestamp_ms
+
+#             if last_result and last_result.pose_landmarks:
+#                 for part in KEY_BODY_PARTS:
+#                     idx = BODY_PARTS[part]
+#                     landmark = last_result.pose_landmarks[0][idx]
+#                     cx = int(landmark.x * width)
+#                     cy = int(landmark.y * height)
+#                     cv2.circle(frame, (cx, cy), 8, (0, 255, 0), -1)
+
+#             annotated_frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
+#             frame_idx += 1
+
+#     cap.release()
+
+#     clip = ImageSequenceClip(annotated_frames, fps=fps)
+#     clip.write_videofile(output_path, codec="libx264", audio=False)
+
+#     return f"landmarks_drawn_videos/{base_filename}"
+
+
 def create_landmarks(video_path, num_frames=30):
     """
     Extract pose landmarks from a video using MediaPipe Pose Landmarker.
@@ -55,16 +202,14 @@ def create_landmarks(video_path, num_frames=30):
 
     Returns:
         list: List of frames, each containing a list of landmarks with x, y, z,
-                visibility, and presence values.
+              visibility, and presence values.
     """
-
     # MediaPipe setup
     BaseOptions = mp.tasks.BaseOptions
     PoseLandmarker = mp.tasks.vision.PoseLandmarker
     PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
     VisionRunningMode = mp.tasks.vision.RunningMode
 
-    # Load the pre-trained pose landmarker model
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_heavy.task")
     with open(model_path, "rb") as f:
@@ -76,30 +221,19 @@ def create_landmarks(video_path, num_frames=30):
         num_poses=1
     )
 
-    # Open video and select frames evenly spaced across the video
-    cap = cv2.VideoCapture(video_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    selected_indices = np.linspace(0, total_frames - 1, num=num_frames, dtype=int)
-    selected_frames = set(selected_indices)
+    # Read video frames using imageio
+    reader = imageio.get_reader(video_path)
+    total_frames = reader.count_frames()
+    selected_indices = set(np.linspace(0, total_frames - 1, num=num_frames, dtype=int))
 
     landmarks = []
 
-    # Process video frames with MediaPipe
     with PoseLandmarker.create_from_options(options) as landmarker:
-        frame_idx = 0
-        while cap.isOpened():
-            success, frame = cap.read()
-            if not success:
-                break
-
-            if frame_idx in selected_frames:
-                # Convert frame to RGB and prepare for MediaPipe
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        for i, frame in enumerate(reader):
+            if i in selected_indices:
+                frame_rgb = np.array(frame)  # imageio returns RGB already
                 mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
-                timestamp_ms = int((frame_idx / fps) * 1000)
-
-                # Detect pose landmarks
+                timestamp_ms = int((i / reader.get_meta_data()['fps']) * 1000)
                 result = landmarker.detect_for_video(mp_image, timestamp_ms)
                 if result.pose_landmarks:
                     frame_landmarks = [{
@@ -111,13 +245,22 @@ def create_landmarks(video_path, num_frames=30):
                     } for lm in result.pose_landmarks[0]]
                     landmarks.append(frame_landmarks)
 
-            frame_idx += 1
-
-    cap.release()
+    reader.close()
     return landmarks
 
 
 def draw_landmarks(video_path, output_dir="static/landmarks_drawn_videos", fast=False):
+    """
+    Draw pose landmarks on a video and save the output.
+
+    Parameters:
+        video_path (str): Input video path.
+        output_dir (str): Directory to save annotated video.
+        fast (bool): If True, process frames less frequently for speed.
+
+    Returns:
+        str: Path to the saved annotated video.
+    """
     BaseOptions = mp.tasks.BaseOptions
     PoseLandmarker = mp.tasks.vision.PoseLandmarker
     PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
@@ -125,9 +268,6 @@ def draw_landmarks(video_path, output_dir="static/landmarks_drawn_videos", fast=
 
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_lite.task")
-
-    # model_path = r"C:\Users\Micha\Golf_Swing\website\models\pose_landmarker_lite.task"
-
     with open(model_path, "rb") as f:
         model_data = f.read()
 
@@ -141,30 +281,22 @@ def draw_landmarks(video_path, output_dir="static/landmarks_drawn_videos", fast=
     base_filename = os.path.basename(video_path)
     output_path = os.path.join(output_dir, base_filename)
 
-    cap = cv2.VideoCapture(video_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    reader = imageio.get_reader(video_path)
+    fps = reader.get_meta_data()['fps']
+    width, height = reader.get_meta_data()['size']
 
     annotated_frames = []
 
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    print("Total frames:", total_frames)
-
-    target_interval_ms = 300 if fast else 33 
+    target_interval_ms = 300 if fast else 33
     last_detection_time = -target_interval_ms
     last_result = None
+    square_size = 9
 
     with PoseLandmarker.create_from_options(options) as landmarker:
-        frame_idx = 0
-        while cap.isOpened():
-            success, frame = cap.read()
-            if not success:
-                break
+        for i, frame in enumerate(reader):
+            timestamp_ms = int((i / fps) * 1000)
 
-            timestamp_ms = int((frame_idx / fps) * 1000)
-
-            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame_rgb = np.array(frame)
             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
 
             if timestamp_ms - last_detection_time >= target_interval_ms:
@@ -177,17 +309,16 @@ def draw_landmarks(video_path, output_dir="static/landmarks_drawn_videos", fast=
                     landmark = last_result.pose_landmarks[0][idx]
                     cx = int(landmark.x * width)
                     cy = int(landmark.y * height)
-                    cv2.circle(frame, (cx, cy), 8, (0, 255, 0), -1)
+                    frame_rgb[cy-square_size:cy+square_size, cx-square_size:cx+square_size] = [0, 255, 0]  # simple green square
 
-            annotated_frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-            frame_idx += 1
+            annotated_frames.append(frame_rgb)
 
-    cap.release()
-
+    reader.close()
     clip = ImageSequenceClip(annotated_frames, fps=fps)
     clip.write_videofile(output_path, codec="libx264", audio=False)
 
     return f"landmarks_drawn_videos/{base_filename}"
+
 
 def cleanup_old_files(folder, max_age_minutes=10):
     now = time.time()
