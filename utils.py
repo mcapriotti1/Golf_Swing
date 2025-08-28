@@ -16,37 +16,37 @@ import subprocess
 
 """ ------------------------------ EXTRACTING LANDMARK DATA --------------------------------------------- """
 
-# def trim_video(video_path, start_time, end_time, output_path=None):
-#     import time
-#     import os
+def trim_video(video_path, start_time, end_time, output_path=None):
+    import time
+    import os
 
-#     start = float(start_time)
-#     end = float(end_time)
+    start = float(start_time)
+    end = float(end_time)
 
-#     if end - start > 30:
-#       return None
+    if end - start > 30:
+      return None
     
-#     if output_path is None:
-#         timestamp = int(time.time() * 1000)
-#         output_dir = "static/trimmed_videos"
-#         os.makedirs(output_dir, exist_ok=True)
-#         output_path = os.path.join(output_dir, f"video_{timestamp}.mp4")
+    if output_path is None:
+        timestamp = int(time.time() * 1000)
+        output_dir = "static/trimmed_videos"
+        os.makedirs(output_dir, exist_ok=True)
+        output_path = os.path.join(output_dir, f"video_{timestamp}.mp4")
     
-#     with VideoFileClip(video_path) as video:
-#         video_duration = video.duration
-#         # Ensure end_time does not exceed video duration
-#         if end > video_duration:
-#             print(f"Warning: Requested end_time {end_time} exceeds video duration {video_duration}. Adjusting end_time.")
-#             end = video_duration
+    with VideoFileClip(video_path) as video:
+        video_duration = video.duration
+        # Ensure end_time does not exceed video duration
+        if end > video_duration:
+            print(f"Warning: Requested end_time {end_time} exceeds video duration {video_duration}. Adjusting end_time.")
+            end = video_duration
     
-#         if start < 0:
-#             print(f"Warning: Requested start_time {start} is less than 0. Adjusting start_time.")
-#             start = 0
+        if start < 0:
+            print(f"Warning: Requested start_time {start} is less than 0. Adjusting start_time.")
+            start = 0
         
-#         trimmed = video.subclipped(start, end)
-#         trimmed.write_videofile(output_path, codec="libx264", audio_codec="aac")
+        trimmed = video.subclipped(start, end)
+        trimmed.write_videofile(output_path, codec="libx264", audio_codec="aac")
     
-#     return output_path
+    return output_path
 
 # def trim_video(video_path, start_time, end_time, output_path=None):
 #     start = float(start_time)
@@ -74,56 +74,56 @@ import subprocess
 
 #     return output_path
 
-import os
-import time
-import subprocess
+# import os
+# import time
+# import subprocess
 
-def trim_video(video_path, start_time, end_time, output_path=None):
-    start = float(start_time)
-    end = float(end_time)
+# def trim_video(video_path, start_time, end_time, output_path=None):
+#     start = float(start_time)
+#     end = float(end_time)
 
-    if end - start > 30:
-        return None  # enforce 30s max
+#     if end - start > 30:
+#         return None  # enforce 30s max
 
-    if output_path is None:
-        timestamp = int(time.time() * 1000)
-        output_dir = "static/trimmed_videos"
-        os.makedirs(output_dir, exist_ok=True)
-        output_path = os.path.join(output_dir, f"video_{timestamp}.mp4")
+#     if output_path is None:
+#         timestamp = int(time.time() * 1000)
+#         output_dir = "static/trimmed_videos"
+#         os.makedirs(output_dir, exist_ok=True)
+#         output_path = os.path.join(output_dir, f"video_{timestamp}.mp4")
 
-    ext = os.path.splitext(video_path)[1].lower()
+#     ext = os.path.splitext(video_path)[1].lower()
 
-    # --- If MP4, try fast trim (copy video only) ---
-    if ext == ".mp4":
-        cmd_fast = [
-            "ffmpeg", "-y",
-            "-ss", str(start),
-            "-i", video_path,
-            "-t", str(end - start),
-            "-c:v", "copy",
-            "-an",  # remove audio
-            output_path
-        ]
-        result = subprocess.run(cmd_fast, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if result.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-            return output_path  # fast trim succeeded
+#     # --- If MP4, try fast trim (copy video only) ---
+#     if ext == ".mp4":
+#         cmd_fast = [
+#             "ffmpeg", "-y",
+#             "-ss", str(start),
+#             "-i", video_path,
+#             "-t", str(end - start),
+#             "-c:v", "copy",
+#             "-an",  # remove audio
+#             output_path
+#         ]
+#         result = subprocess.run(cmd_fast, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+#         if result.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+#             return output_path  # fast trim succeeded
 
-    # --- Otherwise or fallback: re-encode safely ---
-    cmd_safe = [
-        "ffmpeg", "-y",
-        "-ss", str(start),
-        "-i", video_path,
-        "-t", str(end - start),
-        "-vf", "scale=1280:-2",      # downscale width to 1280, maintain aspect ratio
-        "-c:v", "libx264", "-preset", "veryfast", "-crf", "28",
-        "-an",                        # remove audio
-        "-threads", "2",              # lower memory usage
-        "-movflags", "+faststart",
-        output_path
-    ]
-    subprocess.run(cmd_safe, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+#     # --- Otherwise or fallback: re-encode safely ---
+#     cmd_safe = [
+#         "ffmpeg", "-y",
+#         "-ss", str(start),
+#         "-i", video_path,
+#         "-t", str(end - start),
+#         "-vf", "scale=1280:-2",      # downscale width to 1280, maintain aspect ratio
+#         "-c:v", "libx264", "-preset", "veryfast", "-crf", "28",
+#         "-an",                        # remove audio
+#         "-threads", "2",              # lower memory usage
+#         "-movflags", "+faststart",
+#         output_path
+#     ]
+#     subprocess.run(cmd_safe, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    return output_path
+#     return output_path
 
 
 def copy_and_reencode_video(video_path, output_dir):
