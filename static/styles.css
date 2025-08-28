@@ -160,23 +160,28 @@ input[type="range"]::-moz-range-track {
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 5px;
-  height: 20px;
-  background: #4CAF50;
+  height: 80px;
+  width: 80px;
+  border-radius: 50%;
+  margin-top: 9px;
+  background: white;
   cursor: pointer;
   position: relative;
-  z-index: 2;
+  z-index: 10;
+  transform: translateY(3px);
 }
 input[type="range"]::-moz-range-thumb {
-  width: 5px;
-  height: 40px;
-  margin-top: 60px;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 80px;
+  width: 80px;
+  border-radius: 50%;
+  margin-top: 20px;
   background: white;
-  border-color: white;
   cursor: pointer;
   position: relative;
-  z-index: 2;
-  transform: translateY(3px);
+  z-index: 10;
+  transform: translateY(50px);
 }
 
 /* Filled selected range between sliders */
@@ -194,7 +199,7 @@ input[type="range"]::-moz-range-thumb {
   display: flex;
   justify-content: space-between;
   font-size: 3rem;
-  margin-top: 0.5rem;
+  margin-top: 5rem;
   color: white;
 }
 
@@ -315,6 +320,41 @@ input[type="range"]::-moz-range-thumb {
     font-size: 1.5rem;
   }
 
+  input[type="submit"] {
+    font-size: 3rem;
+  }
+
+  .time-labels {
+    font-size: 1.3rem;
+    margin-top: 1rem;
+  }
+
+  .custom-file-upload {
+    font-size: 2rem;
+  }
+
+  .videoUpload {
+    max-height: 500px;
+  }
+
+  h4 {
+    font-size: 3rem;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+  }
+
+  input[type="range"]::-moz-range-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    transform: translateY(20px);
+  }
 
   .video-form-section {
     flex-direction: row;
@@ -328,7 +368,7 @@ input[type="range"]::-moz-range-thumb {
     font-size: 1.5rem;
   }
 
-  
+
 
   .pro-demo, .upload-form {
     width: 40%;
@@ -351,7 +391,7 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
   width: 100%;
   padding: 0.75rem;
-  font-size: 3rem;
+  font-size: 2.5rem;
   border: 1px solid black;
   border-radius: 6px;
   box-sizing: border-box;
