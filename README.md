@@ -14,7 +14,7 @@ This project analyzes golf swings and classifies them as either **Pro** or **Ama
    ```bash
    pip install -r requirements.txt:
 3. Run the app locally
-  ```bash
+   ```bash
    python app.py
 
 ![Demo Screenshot](static/images/golf_demo.gif)
