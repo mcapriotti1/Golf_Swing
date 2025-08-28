@@ -23,12 +23,12 @@ body {
 
 .custom-file-upload {
   display: inline-block;
-  padding: 10px 20px;
+  padding: 15px 25px;
   background-color: #555;
   color: white;
-  border-radius: 5px;
+  border-radius: 10px;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 4rem;
   text-align: center;
   transition: background-color 0.3s ease;
   text-decoration: none;
@@ -42,14 +42,14 @@ h1 {
   text-align: center;
   margin-bottom: 1.5rem;
   color: #fff;
-  font-size: 5rem
+  font-size: 8rem
 }
 
 h4 {
   text-align: center;
   margin-bottom: 1.5rem;
   color: #fff;
-  font-size: 2rem
+  font-size: 5rem
 }
 
 h3 {
@@ -62,13 +62,13 @@ h3 {
 
 p {
   color: white;
-  font-size: 1rem;
+  font-size: 3rem;
   text-align: center;
 }
 
 a {
   color: white;
-  font-size: 1rem;
+  font-size: 2.5rem;
   text-align: center;
 }
 
@@ -92,6 +92,7 @@ input[type="submit"] {
   color: white;
   border: none;
   cursor: pointer;
+  font-size: 5rem;
 }
 
 input[type="submit"]:hover {
@@ -192,7 +193,7 @@ input[type="range"]::-moz-range-thumb {
 .time-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 0.9rem;
+  font-size: 3rem;
   margin-top: 0.5rem;
   color: white;
 }
@@ -251,11 +252,15 @@ input[type="range"]::-moz-range-thumb {
   margin-bottom: 2rem;
   flex: 1;
   width: 100%;
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  flex-direction: column;
 }
 
 .demo-video {
   width: 100%;
-  max-width: 600px;
+  max-width: 800px;
   border-radius: 12px;
   box-shadow: 0 0 20px rgb(0, 0, 0)
 }
@@ -264,7 +269,7 @@ input[type="range"]::-moz-range-thumb {
 /* Upload form section override */
 .upload-form .container {
   width: 100%;
-  max-width: 300px;
+  max-width: 800px;
   background-color: #1e1e1e;
 }
 
@@ -301,15 +306,34 @@ input[type="range"]::-moz-range-thumb {
 
 
 @media (min-width: 1000px) {
+
+  h1 {
+    font-size: 5rem;
+  }
+
+  p {
+    font-size: 1.5rem;
+  }
+
+
   .video-form-section {
     flex-direction: row;
+    justify-content: center;
     align-items: flex-start;
     gap: 100px;
 
   }
 
+  a {
+    font-size: 1.5rem;
+  }
+
+  
+
   .pro-demo, .upload-form {
-    width: 50%;
+    width: 40%;
+    align-items: center;
+    max-width: 2000px;
   }
 
   .pro-demo video {
@@ -327,7 +351,7 @@ input[type="range"]::-moz-range-thumb {
   cursor: pointer;
   width: 100%;
   padding: 0.75rem;
-  font-size: 1rem;
+  font-size: 3rem;
   border: 1px solid black;
   border-radius: 6px;
   box-sizing: border-box;

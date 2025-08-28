@@ -28,6 +28,7 @@
   width: 120px;
   height: 120px;
   margin-right: 20px;
+  margin-bottom: 60px;
 }
 
 .progress-ring__background {
@@ -50,7 +51,7 @@
 
 .progress-text {
   top: 60%;
-  left: 58%;
+  left: 66%;
   transform: translate(-50%, -50%);
   position: absolute;
   font-size: 1.5rem;
@@ -113,7 +114,7 @@ video {
   align-items: center;
   text-align: center;
   flex: 1 1 600px;
-  width: 350px;
+  width: 600px;
   max-width: 800px;
   height: 100%
 }

@@ -140,10 +140,12 @@ document.addEventListener('DOMContentLoaded', function () {
 //   })
 //   .catch(err => console.error("Failed to load landmarks:", err));
 const video = document.getElementById("video");
+const videoCaption = document.getElementById("videoCaption")
 
 // Apply playsinline only on mobile/iOS
 if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
   video.setAttribute("playsinline", "");
+  videoCaption.textContent = "Mobile Landmark Drawing Not Supported."
 }
 
 const canvas = document.getElementById("overlay");
