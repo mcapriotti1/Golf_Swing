@@ -2,62 +2,33 @@ import mediapipe as mp
 import numpy as np
 import math
 import os
-os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0" 
-os.environ["OPENCV_VIDEOIO_PRIORITY_AVFOUNDATION"] = "0"
-from moviepy import VideoFileClip
 import time
-from pathlib import Path
-from moviepy import ImageSequenceClip
 import json
 import cv2
-import imageio
-from PIL import Image, ImageDraw
 import subprocess
-import re
+os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0" 
+os.environ["OPENCV_VIDEOIO_PRIORITY_AVFOUNDATION"] = "0"
 
-""" ------------------------------ EXTRACTING LANDMARK DATA --------------------------------------------- """
+""" ====================================================================================================
+                                            VIDEO UTILITIES
+   ==================================================================================================== """
 
-def trim_video(video_path, start_time, end_time, output_path=None):
-    import time
-    import os
+def ensure_mp4(video_path:str) -> str:
+    """
+    Re-encode a video to MP4 (H.264 video + AAC audio).
 
-    start = float(start_time)
-    end = float(end_time)
+    Args:
+        video_path (str): Input video file.
 
-    if end - start > 30:
-      return None
-    
-    if output_path is None:
-        timestamp = int(time.time() * 1000)
-        output_dir = "static/trimmed_videos"
-        os.makedirs(output_dir, exist_ok=True)
-        output_path = os.path.join(output_dir, f"video_{timestamp}.mp4")
-    
-    with VideoFileClip(video_path) as video:
-        video_duration = video.duration
-        # Ensure end_time does not exceed video duration
-        if end > video_duration:
-            print(f"Warning: Requested end_time {end_time} exceeds video duration {video_duration}. Adjusting end_time.")
-            end = video_duration
-    
-        if start < 0:
-            print(f"Warning: Requested start_time {start} is less than 0. Adjusting start_time.")
-            start = 0
-        
-        trimmed = video.subclipped(start, end)
-        trimmed.write_videofile(output_path, codec="libx264", audio_codec="aac")
-    
-    return output_path
+    Returns:
+        str: Path to converted MP4 file.
+    """
 
-
-def ensure_mp4(video_path):
-    """Re-encode video to MP4 (H.264 + AAC), returns new path."""
     timestamp = int(time.time() * 1000)
     output_dir = "static/converted_videos"
     os.makedirs(output_dir, exist_ok=True)
     converted_path = os.path.join(output_dir, f"converted_{timestamp}.mp4")
 
-    # Convert any video to MP4 with H.264 video + AAC audio
     cmd = [
         "ffmpeg", "-y",
         "-i", video_path,
@@ -70,17 +41,19 @@ def ensure_mp4(video_path):
 
     return converted_path
 
+def mov_trim_video(video_path: str, start_time: float, end_time: float, output_path: str = None) -> str:
+    """
+    Trim a MOV/MP4 video between start and end timestamps.
 
-# def get_duration_from_filename(file_path):
-#     filename = os.path.basename(file_path)
-#     match = re.search(r'_(\d+)ms\.mp4$', filename)
-#     if match:
-#         duration_ms = int(match.group(1))
-#         return duration_ms / 1000
-#     return None
+    Args:
+        video_path (str): Path to source video.
+        start_time (float): Start time in seconds.
+        end_time (float): End time in seconds.
+        output_path (str, optional): Output path for trimmed video.
 
-
-def mov_trim_video(video_path, start_time, end_time, output_path=None):
+    Returns:
+        str | None: Trimmed video path, or None if duration exceeds 30s.
+    """
     start = float(start_time)
     end = float(end_time)
     duration = end - start
@@ -108,105 +81,23 @@ def mov_trim_video(video_path, start_time, end_time, output_path=None):
 
     return output_path
 
-# import os
-# import time
-# import subprocess
+""" ====================================================================================================
+                                        LANDMARK EXTRACTION
+==================================================================================================== """
 
-# def trim_video(video_path, start_time, end_time, output_path=None):
-#     start = float(start_time)
-#     end = float(end_time)
+def mov_create_landmarks(video_path: str, num_frames:int = 30, start_time: float = None, end_time: float = None):
+    """
+    Extract pose landmarks from a MOV/MP4 video between specified timestamps.
 
-#     if end - start > 30:
-#         return None  # enforce 30s max
+    Args:
+        video_path (str): Path to video file.
+        num_frames (int): Number of evenly spaced frames to sample.
+        start_time (float): Start time (s).
+        end_time (float): End time (s).
 
-#     if output_path is None:
-#         timestamp = int(time.time() * 1000)
-#         output_dir = "static/trimmed_videos"
-#         os.makedirs(output_dir, exist_ok=True)
-#         output_path = os.path.join(output_dir, f"video_{timestamp}.mp4")
-
-#     ext = os.path.splitext(video_path)[1].lower()
-
-#     # --- If MP4, try fast trim (copy video only) ---
-#     if ext == ".mp4":
-#         cmd_fast = [
-#             "ffmpeg", "-y",
-#             "-ss", str(start),
-#             "-i", video_path,
-#             "-t", str(end - start),
-#             "-c:v", "copy",
-#             "-an",  # remove audio
-#             output_path
-#         ]
-#         result = subprocess.run(cmd_fast, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-#         if result.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
-#             return output_path  # fast trim succeeded
-
-#     # --- Otherwise or fallback: re-encode safely ---
-#     cmd_safe = [
-#         "ffmpeg", "-y",
-#         "-ss", str(start),
-#         "-i", video_path,
-#         "-t", str(end - start),
-#         "-vf", "scale=1280:-2",      # downscale width to 1280, maintain aspect ratio
-#         "-c:v", "libx264", "-preset", "veryfast", "-crf", "28",
-#         "-an",                        # remove audio
-#         "-threads", "2",              # lower memory usage
-#         "-movflags", "+faststart",
-#         output_path
-#     ]
-#     subprocess.run(cmd_safe, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-#     return output_path
-
-
-def copy_and_reencode_video(video_path, output_dir):
-    os.makedirs(output_dir, exist_ok=True)
-    output_path = os.path.join(output_dir, os.path.basename(video_path))
-    
-    subprocess.run([
-        "ffmpeg", "-i", video_path,
-        "-c:v", "libx264",
-        "-c:a", "aac",
-        "-y",  # overwrite if exists
-        output_path
-    ])
-    
-    return output_path
-
-
-# def copy_and_reencode_video(video_path, output_dir):
-#     """
-#     Copies and re-encodes a video to ensure browser compatibility (H.264 MP4).
-    
-#     Args:
-#         video_path (str): Path to the original video.
-#         output_dir (str): Directory to save the re-encoded video.
-    
-#     Returns:
-#         str: Full path to the re-encoded video.
-#     """
-#     print(video_path)
-#     os.makedirs(output_dir, exist_ok=True)
-#     base_filename = os.path.basename(video_path)
-#     output_path = os.path.join(output_dir, base_filename)
-    
-#     with VideoFileClip(video_path) as clip:
-#         clip.write_videofile(
-#             output_path,
-#             codec="libx264",
-#             audio_codec="aac",
-#             temp_audiofile="temp-audio.m4a",
-#             remove_temp=True
-#         )
-    
-#     return output_path
-def mov_create_landmarks(video_path, num_frames=30, start_time=None, end_time=None):
-    import cv2
-    import os
-    import numpy as np
-    import mediapipe as mp
-
+    Returns:
+        list[list[dict]]: Landmarks per frame, or empty frames if detection fails.
+    """
     # MediaPipe setup
     BaseOptions = mp.tasks.BaseOptions
     PoseLandmarker = mp.tasks.vision.PoseLandmarker
@@ -273,91 +164,7 @@ def mov_create_landmarks(video_path, num_frames=30, start_time=None, end_time=No
     cap.release()
     return landmarks
 
-
-
-def create_landmarks(video_path, num_frames=31, start_time=None):
-    """
-    Extract pose landmarks from a video using MediaPipe Pose Landmarker.
-
-    Parameters:
-        video_path (str): Path to the video file.
-        num_frames (int): Number of evenly spaced frames to extract (default 30).
-
-    Returns:
-        list: List of frames, each containing a list of landmarks with x, y, z,
-                visibility, and presence values.
-    """
-    # MediaPipe setup
-    BaseOptions = mp.tasks.BaseOptions
-    PoseLandmarker = mp.tasks.vision.PoseLandmarker
-    PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
-    VisionRunningMode = mp.tasks.vision.RunningMode
-
-    # Load the pre-trained pose landmarker model
-    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_lite.task")
-    with open(model_path, "rb") as f:
-        model_data = f.read()
-
-    options = PoseLandmarkerOptions(
-        base_options=BaseOptions(model_asset_buffer=model_data),
-        running_mode=VisionRunningMode.VIDEO,
-        num_poses=1
-    )
-
-    # Open video and select frames evenly spaced across the video
-    cap = cv2.VideoCapture(video_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    # if start_time is None:
-    #     start_frame = 0
-    # else:
-    #     start_frame = int(start_time * fps)
-    #     if start_frame >= total_frames:
-    #         start_frame = total_frames - 1
-    # print(start_frame)
-    # print(total_frames)
-
-    # total_frames -= start_frame
-    landmarks = []
-
-    # timestamps = np.linspace(0, duration, num=num_frames, endpoint=False)
-    selected_indices = np.linspace(0, total_frames - 1, num=num_frames, dtype=int)
-    selected_frames = set(selected_indices)
-
-
-    # Process video frames with MediaPipe
-    with PoseLandmarker.create_from_options(options) as landmarker:
-        frame_idx = 0
-        while cap.isOpened():
-            success, frame = cap.read()
-            if not success:
-                break
-
-            if frame_idx in selected_frames:
-                # Convert frame to RGB and prepare for MediaPipe
-                frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
-                timestamp_ms = int((frame_idx / fps) * 1000)
-
-                # Detect pose landmarks
-                result = landmarker.detect_for_video(mp_image, timestamp_ms)
-                if result.pose_landmarks:
-                    frame_landmarks = [{
-                        'x': lm.x,
-                        'y': lm.y,
-                        'z': lm.z,
-                        'visibility': lm.visibility,
-                        'presence': lm.presence
-                    } for lm in result.pose_landmarks[0]]
-                    landmarks.append(frame_landmarks)
-
-            frame_idx += 1
-    cap.release()
-    return landmarks
-    
-
-
+# Gathering Landmark Data for video display
 def extract_landmarks(video_path, fast=False):
     """
     Extracts pose landmarks from a video in a memory-efficient way.
@@ -370,8 +177,6 @@ def extract_landmarks(video_path, fast=False):
         list[dict]: Each dict contains frame_index, timestamp (s), and landmarks [{x, y}].
                     Returns None if video is invalid.
     """
-    import os, cv2, numpy as np, mediapipe as mp
-
     if not os.path.exists(video_path):
         print(f"Video not found: {video_path}")
         return None
@@ -450,647 +255,9 @@ def extract_landmarks(video_path, fast=False):
     cap.release()
     return landmarks_list
 
-
-
-# def extract_landmarks(video_path):
-#     """
-#     Extracts pose landmarks from a video in a memory-efficient way.
-
-#     Args:
-#         video_path (str): Input video path.
-
-#     Returns:
-#         list[dict]: Each dict contains frame_index, timestamp (s), and landmarks [{x, y}].
-#                     Returns None if video is invalid.
-#     """
-#     import os, cv2, numpy as np, mediapipe as mp
-
-#     if not os.path.exists(video_path):
-#         print(f"Video not found: {video_path}")
-#         return None
-
-#     cap = cv2.VideoCapture(video_path)
-#     if not cap.isOpened():
-#         print(f"Cannot open video: {video_path}")
-#         return None
-
-#     fps = cap.get(cv2.CAP_PROP_FPS)
-#     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-#     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-#     if fps <= 0 or width <= 0 or height <= 0:
-#         print(f"Invalid video metadata: {video_path}")
-#         cap.release()
-#         return None
-
-#     # --- MediaPipe setup ---
-#     mp_tasks = mp.tasks
-#     BaseOptions = mp_tasks.BaseOptions
-#     PoseLandmarker = mp_tasks.vision.PoseLandmarker
-#     PoseLandmarkerOptions = mp_tasks.vision.PoseLandmarkerOptions
-#     VisionRunningMode = mp_tasks.vision.RunningMode
-
-#     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-#     model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_lite.task")
-#     with open(model_path, "rb") as f:
-#         model_data = f.read()
-
-#     options = PoseLandmarkerOptions(
-#         base_options=BaseOptions(model_asset_buffer=model_data),
-#         running_mode=VisionRunningMode.VIDEO,
-#         num_poses=1
-#     )
-
-#     landmarks_list = []
-#     frame_idx = 0
-
-#     with PoseLandmarker.create_from_options(options) as landmarker:
-#         while True:
-#             success, frame = cap.read()
-#             if not success:
-#                 break
-
-#             timestamp = frame_idx / fps
-#             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-#             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
-
-#             try:
-#                 result = landmarker.detect_for_video(mp_image, int(timestamp * 1000))
-#             except Exception as e:
-#                 print(f"Detection error at frame {frame_idx}: {e}")
-#                 result = None
-
-#             frame_landmarks = []
-#             if result and result.pose_landmarks:
-#                 for idx in range(len(result.pose_landmarks[0])):
-#                     if BODY_PARTS_IDX[idx] in KEY_BODY_PARTS:
-#                         lm = result.pose_landmarks[0][idx]
-#                         frame_landmarks.append({"x": lm.x, "y": lm.y})  # normalized 0-1
-
-#             landmarks_list.append({
-#                 "frame_index": frame_idx,
-#                 "timestamp": timestamp,
-#                 "landmarks": frame_landmarks
-#             })
-
-#             del frame, frame_rgb, mp_image
-#             frame_idx += 1
-
-#     cap.release()
-#     print(landmarks_list)
-#     return landmarks_list
-
-
-# import os
-# import subprocess
-# import tempfile
-# import mediapipe as mp
-# import cv2
-# import numpy as np
-
-# def draw_landmarks(video_path, output_dir="static/landmarks_drawn_videos_corrupt", fast=False):
-#     """
-#     Draws pose landmarks on a video using streaming (low memory) approach.
-
-#     Args:
-#         video_path (str): Input video path.
-#         output_dir (str): Output directory.
-#         fast (bool): If True, skips frames for faster processing.
-
-#     Returns:
-#         str: Path to the output video, or None if video invalid.
-#     """
-#     import os, subprocess, numpy as np, cv2, mediapipe as mp
-
-#     # --- Check video validity ---
-#     if not os.path.exists(video_path):
-#         print(f"Video not found: {video_path}")
-#         return None
-#     cap = cv2.VideoCapture(video_path)
-#     if not cap.isOpened():
-#         print(f"Cannot open video: {video_path}")
-#         return None
-
-#     fps = cap.get(cv2.CAP_PROP_FPS)
-#     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-#     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-#     cap.release()
-#     if fps <= 0 or width <= 0 or height <= 0:
-#         print(f"Invalid video metadata: {video_path}")
-#         return None
-
-#     # --- MediaPipe setup ---
-#     mp_tasks = mp.tasks
-#     BaseOptions = mp_tasks.BaseOptions
-#     PoseLandmarker = mp_tasks.vision.PoseLandmarker
-#     PoseLandmarkerOptions = mp_tasks.vision.PoseLandmarkerOptions
-#     VisionRunningMode = mp_tasks.vision.RunningMode
-
-#     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-#     model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_lite.task")
-#     with open(model_path, "rb") as f:
-#         model_data = f.read()
-
-#     options = PoseLandmarkerOptions(
-#         base_options=BaseOptions(model_asset_buffer=model_data),
-#         running_mode=VisionRunningMode.VIDEO,
-#         num_poses=1
-#     )
-
-#     os.makedirs(output_dir, exist_ok=True)
-#     base_filename = os.path.basename(video_path)
-#     output_path = os.path.join(output_dir, base_filename)
-
-#     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
-#     out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-
-#     skip_interval = 3 if fast else 1
-#     target_interval_ms = 300 if fast else 33
-
-#     # --- Stream frames via FFmpeg ---
-#     ffmpeg_cmd = [
-#         "ffmpeg",
-#         "-i", video_path,
-#         "-f", "image2pipe",
-#         "-pix_fmt", "bgr24",
-#         "-vcodec", "rawvideo",
-#         "-"
-#     ]
-#     proc = subprocess.Popen(ffmpeg_cmd, stdout=subprocess.PIPE, bufsize=10**7)
-
-#     frame_idx = 0
-#     last_detection_time = -target_interval_ms
-#     last_result = None
-#     frame_size = width * height * 3
-
-#     with PoseLandmarker.create_from_options(options) as landmarker:
-#         while True:
-#             raw_frame = proc.stdout.read(frame_size)
-#             if len(raw_frame) < frame_size:
-#                 break  # end of video
-
-#             frame = np.frombuffer(raw_frame, np.uint8).reshape((height, width, 3)).copy()
-
-#             # Skip frames for fast mode
-#             if frame_idx % skip_interval != 0:
-#                 out.write(frame)
-#                 frame_idx += 1
-#                 continue
-
-#             # Pose detection
-#             timestamp_ms = int((frame_idx / fps) * 1000)
-#             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-#             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
-
-#             if timestamp_ms - last_detection_time >= target_interval_ms:
-#                 try:
-#                     last_result = landmarker.detect_for_video(mp_image, timestamp_ms)
-#                 except Exception as e:
-#                     print(f"Detection error at frame {frame_idx}: {e}")
-#                     last_result = None
-#                 last_detection_time = timestamp_ms
-
-#             # Draw landmarks
-#             if last_result and last_result.pose_landmarks:
-#                 for part in KEY_BODY_PARTS:
-#                     idx = BODY_PARTS[part]
-#                     landmark = last_result.pose_landmarks[0][idx]
-#                     cx = int(landmark.x * width)
-#                     cy = int(landmark.y * height)
-#                     cv2.circle(frame, (cx, cy), 8, (0, 255, 0), -1)
-
-#             out.write(frame)
-
-#             del frame, frame_rgb, mp_image
-#             frame_idx += 1
-
-#     out.release()
-#     proc.stdout.close()
-#     proc.wait()
-
-#     if not os.path.exists(output_path) or os.path.getsize(output_path) == 0:
-#         print("Failed to create output video.")
-#         return None
-
-#     print(f"Output video saved to: {output_path}")
-#     return output_path
-
-
-
-# def draw_landmarks(video_path, output_dir="static/landmarks_drawn_videos_corrupt", fast=False):
-#     BaseOptions = mp.tasks.BaseOptions
-#     PoseLandmarker = mp.tasks.vision.PoseLandmarker
-#     PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
-#     VisionRunningMode = mp.tasks.vision.RunningMode
-
-#     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-#     model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_lite.task")
-
-#     with open(model_path, "rb") as f:
-#         model_data = f.read()
-
-#     options = PoseLandmarkerOptions(
-#         base_options=BaseOptions(model_asset_buffer=model_data),
-#         running_mode=VisionRunningMode.VIDEO,
-#         num_poses=1
-#     )
-
-#     os.makedirs(output_dir, exist_ok=True)
-#     base_filename = os.path.basename(video_path)
-#     output_path = os.path.join(output_dir, base_filename)
-
-#     cap = cv2.VideoCapture(video_path)
-#     fps = cap.get(cv2.CAP_PROP_FPS)
-#     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-#     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-#     fourcc = cv2.VideoWriter_fourcc(*"mp4v")  # libx264 can be used too
-#     out = cv2.VideoWriter(output_path, fourcc, fps, (width, height))
-
-#     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-#     print("Total frames:", total_frames)
-
-#     target_interval_ms = 300 if fast else 33 
-#     last_detection_time = -target_interval_ms
-#     last_result = None
-
-#     with PoseLandmarker.create_from_options(options) as landmarker:
-#         frame_idx = 0
-#         while cap.isOpened():
-#             success, frame = cap.read()
-#             if not success:
-#                 break
-
-#             timestamp_ms = int((frame_idx / fps) * 1000)
-#             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-#             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
-
-#             if timestamp_ms - last_detection_time >= target_interval_ms:
-#                 last_result = landmarker.detect_for_video(mp_image, timestamp_ms)
-#                 last_detection_time = timestamp_ms
-
-#             # Draw landmarks
-#             if last_result and last_result.pose_landmarks:
-#                 for part in KEY_BODY_PARTS:
-#                     idx = BODY_PARTS[part]
-#                     landmark = last_result.pose_landmarks[0][idx]
-#                     cx = int(landmark.x * width)
-#                     cy = int(landmark.y * height)
-#                     cv2.circle(frame, (cx, cy), 8, (0, 255, 0), -1)
-
-#             # Write frame directly to output video
-#             out.write(frame)
-#             frame_idx += 1
-
-#     cap.release()
-#     out.release()
-
-#     return f"static/landmarks_drawn_videos_corrupt/{base_filename}"
-
-import subprocess
-
-def copy_and_reencode_video(video_path, output_dir):
-    print(video_path)
-    """
-    Re-encodes a video to H.264 MP4 for browser compatibility (memory efficient).
-    
-    Args:
-        video_path (str): Path to the input video.
-        output_dir (str): Directory where the re-encoded video should be saved.
-    
-    Returns:
-        str: Full path to the re-encoded video.
-    """
-    os.makedirs(output_dir, exist_ok=True)
-    base_filename = os.path.basename(video_path)
-    output_path = os.path.join(output_dir, base_filename)
-
-    command = [
-        "ffmpeg",
-        "-y",  # overwrite if file exists
-        "-i", video_path,
-        "-c:v", "libx264",  # H.264 codec
-        "-preset", "fast",  # balance speed and size
-        "-c:a", "aac",      # audio codec
-        "-movflags", "+faststart",  # better streaming in browsers
-        output_path
-    ]
-
-    subprocess.run(command, check=True)
-
-    return output_path
-
-
-
-
-# def draw_landmarks(video_path, output_dir="static/landmarks_drawn_videos", fast=False):
-#     BaseOptions = mp.tasks.BaseOptions
-#     PoseLandmarker = mp.tasks.vision.PoseLandmarker
-#     PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
-#     VisionRunningMode = mp.tasks.vision.RunningMode
-
-#     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-#     model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_lite.task")
-
-#     # model_path = r"C:\Users\Micha\Golf_Swing\website\models\pose_landmarker_lite.task"
-
-#     with open(model_path, "rb") as f:
-#         model_data = f.read()
-
-#     options = PoseLandmarkerOptions(
-#         base_options=BaseOptions(model_asset_buffer=model_data),
-#         running_mode=VisionRunningMode.VIDEO,
-#         num_poses=1
-#     )
-
-#     os.makedirs(output_dir, exist_ok=True)
-#     base_filename = os.path.basename(video_path)
-#     output_path = os.path.join(output_dir, base_filename)
-
-#     cap = cv2.VideoCapture(video_path)
-#     fps = cap.get(cv2.CAP_PROP_FPS)
-#     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-#     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-
-#     annotated_frames = []
-
-#     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-#     print("Total frames:", total_frames)
-
-#     target_interval_ms = 300 if fast else 33 
-#     last_detection_time = -target_interval_ms
-#     last_result = None
-
-#     with PoseLandmarker.create_from_options(options) as landmarker:
-#         frame_idx = 0
-#         while cap.isOpened():
-#             success, frame = cap.read()
-#             if not success:
-#                 break
-
-#             timestamp_ms = int((frame_idx / fps) * 1000)
-
-#             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-#             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
-
-#             if timestamp_ms - last_detection_time >= target_interval_ms:
-#                 last_result = landmarker.detect_for_video(mp_image, timestamp_ms)
-#                 last_detection_time = timestamp_ms
-
-#             if last_result and last_result.pose_landmarks:
-#                 for part in KEY_BODY_PARTS:
-#                     idx = BODY_PARTS[part]
-#                     landmark = last_result.pose_landmarks[0][idx]
-#                     cx = int(landmark.x * width)
-#                     cy = int(landmark.y * height)
-#                     cv2.circle(frame, (cx, cy), 8, (0, 255, 0), -1)
-
-#             annotated_frames.append(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
-#             frame_idx += 1
-
-#     cap.release()
-
-#     clip = ImageSequenceClip(annotated_frames, fps=fps)
-#     clip.write_videofile(output_path, codec="libx264", audio=False)
-
-#     return f"landmarks_drawn_videos/{base_filename}"
-
-
-# def create_landmarks(video_path, num_frames=30):
-#     """
-#     Extract pose landmarks from a video using MediaPipe Pose Landmarker.
-
-#     Parameters:
-#         video_path (str): Path to the video file.
-#         num_frames (int): Number of evenly spaced frames to extract (default 30).
-
-#     Returns:
-#         list: List of frames, each containing a list of landmarks with x, y, z,
-#               visibility, and presence values.
-#     """
-#     # MediaPipe setup
-#     BaseOptions = mp.tasks.BaseOptions
-#     PoseLandmarker = mp.tasks.vision.PoseLandmarker
-#     PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
-#     VisionRunningMode = mp.tasks.vision.RunningMode
-
-#     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-#     model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_heavy.task")
-#     with open(model_path, "rb") as f:
-#         model_data = f.read()
-
-#     options = PoseLandmarkerOptions(
-#         base_options=BaseOptions(model_asset_buffer=model_data),
-#         running_mode=VisionRunningMode.VIDEO,
-#         num_poses=1
-#     )
-
-#     # Read video frames using imageio
-#     reader = imageio.get_reader(video_path)
-#     total_frames = reader.count_frames()
-#     selected_indices = set(np.linspace(0, total_frames - 1, num=num_frames, dtype=int))
-
-#     landmarks = []
-
-#     with PoseLandmarker.create_from_options(options) as landmarker:
-#         for i, frame in enumerate(reader):
-#             if i in selected_indices:
-#                 frame_rgb = np.array(frame)  # imageio returns RGB already
-#                 mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
-#                 timestamp_ms = int((i / reader.get_meta_data()['fps']) * 1000)
-#                 result = landmarker.detect_for_video(mp_image, timestamp_ms)
-#                 if result.pose_landmarks:
-#                     frame_landmarks = [{
-#                         'x': lm.x,
-#                         'y': lm.y,
-#                         'z': lm.z,
-#                         'visibility': lm.visibility,
-#                         'presence': lm.presence
-#                     } for lm in result.pose_landmarks[0]]
-#                     landmarks.append(frame_landmarks)
-
-#     reader.close()
-#     return landmarks
-
-
-# def draw_landmarks(video_path, output_dir="static/landmarks_drawn_videos", fast=False):
-#     """
-#     Draw pose landmarks on a video and save the output.
-
-#     Parameters:
-#         video_path (str): Input video path.
-#         output_dir (str): Directory to save annotated video.
-#         fast (bool): If True, process frames less frequently for speed.
-
-#     Returns:
-#         str: Path to the saved annotated video.
-#     """
-#     BaseOptions = mp.tasks.BaseOptions
-#     PoseLandmarker = mp.tasks.vision.PoseLandmarker
-#     PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
-#     VisionRunningMode = mp.tasks.vision.RunningMode
-
-#     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-#     model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_lite.task")
-#     with open(model_path, "rb") as f:
-#         model_data = f.read()
-
-#     options = PoseLandmarkerOptions(
-#         base_options=BaseOptions(model_asset_buffer=model_data),
-#         running_mode=VisionRunningMode.VIDEO,
-#         num_poses=1
-#     )
-
-#     os.makedirs(output_dir, exist_ok=True)
-#     base_filename = os.path.basename(video_path)
-#     output_path = os.path.join(output_dir, base_filename)
-
-#     reader = imageio.get_reader(video_path)
-#     fps = reader.get_meta_data()['fps']
-#     width, height = reader.get_meta_data()['size']
-
-#     annotated_frames = []
-
-#     target_interval_ms = 300 if fast else 33
-#     last_detection_time = -target_interval_ms
-#     last_result = None
-#     square_size = 9
-
-#     with PoseLandmarker.create_from_options(options) as landmarker:
-#         for i, frame in enumerate(reader):
-#             timestamp_ms = int((i / fps) * 1000)
-
-#             frame_rgb = np.array(frame)
-#             mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
-
-#             if timestamp_ms - last_detection_time >= target_interval_ms:
-#                 last_result = landmarker.detect_for_video(mp_image, timestamp_ms)
-#                 last_detection_time = timestamp_ms
-
-#             if last_result and last_result.pose_landmarks:
-#                 for part in KEY_BODY_PARTS:
-#                     idx = BODY_PARTS[part]
-#                     landmark = last_result.pose_landmarks[0][idx]
-#                     cx = int(landmark.x * width)
-#                     cy = int(landmark.y * height)
-#                     frame_rgb[cy-square_size:cy+square_size, cx-square_size:cx+square_size] = [0, 255, 0]  # simple green square
-
-#             annotated_frames.append(frame_rgb)
-
-#     reader.close()
-#     clip = ImageSequenceClip(annotated_frames, fps=fps)
-#     clip.write_videofile(output_path, codec="libx264", audio=False)
-
-#     return f"landmarks_drawn_videos/{base_filename}"
-
-
-def cleanup_old_files(folder, max_age_minutes=10):
-    now = time.time()
-    max_age = max_age_minutes * 60  # seconds
-
-    for filename in os.listdir(folder):
-        file_path = os.path.join(folder, filename)
-        if os.path.isfile(file_path):
-            file_age = now - os.path.getmtime(file_path)
-            if file_age > max_age:
-                print(f"Deleting old file: {file_path}")
-                os.remove(file_path)
-
-def cleanup_folder(folder):
-    for filename in os.listdir(folder):
-        file_path = os.path.join(folder, filename)
-        if os.path.isfile(file_path):
-            os.remove(file_path)
-
-def save_prediction(json_filename, file_path, prediction, confidence, start, end, mov):
-
-    filename = os.path.basename(file_path)
-    new_entry = {
-        filename: {
-            "prediction": prediction,
-            "confidence": confidence,
-            "start": float(start),
-            "end": float(end),
-            "mov": bool(mov),
-        }
-    }
-
-    if os.path.exists(json_filename):
-        with open(json_filename, 'r') as f:
-            try:
-                data = json.load(f)
-            except json.JSONDecodeError:
-                data = {}
-    else:
-        data = {}
-
-    data.update(new_entry)
-
-    with open(json_filename, 'w') as f:
-        json.dump(data, f, indent=2)
-
-
-def load_predictions(JSON_PATH):
-    if os.path.exists(JSON_PATH):
-        with open(JSON_PATH, "r") as f:
-            try:
-                return json.load(f)
-            except json.JSONDecodeError:
-                return {}
-    return {}
-
-def save_predictions(data, JSON_PATH):
-    with open(JSON_PATH, "w") as f:
-        json.dump(data, f, indent=2)
-
-
-import os
-import json
-
-def append_landmarks_to_json(filename, landmarks_data, json_path="static/video_landmarks.json"):
-
-    # Load existing data if the file exists
-    if os.path.exists(json_path):
-        with open(json_path, "r") as f:
-            try:
-                existing_data = json.load(f)
-            except json.JSONDecodeError:
-                existing_data = {}
-    else:
-        existing_data = {}
-
-    # Add or update the entry for the filename
-    existing_data[filename] = landmarks_data
-
-    # Write back the updated dictionary
-    with open(json_path, "w") as f:
-        json.dump(existing_data, f, indent=2)
-
-    print(f"Landmarks for {filename} appended to {json_path}")
-
-
-def clear_old_videos(JSON_PATH):
-    data = load_predictions(JSON_PATH)
-    now_ms = int(time.time() * 1000)
-
-    def is_recent(filename):
-        TEN_MINUTES_MS = 10 * 60 * 1000 
-        try:
-            timestamp_str = filename.split('_')[1].split('.')[0]
-            timestamp = int(timestamp_str)
-            age_ms = now_ms - timestamp
-            return age_ms < TEN_MINUTES_MS
-        except (IndexError, ValueError):
-            return True
-
-    filtered_data = {fname: info for fname, info in data.items() if is_recent(fname)}
-
-    if len(filtered_data) != len(data):
-        save_predictions(filtered_data, JSON_PATH)
-        print(f"Cleared old videos at {time.strftime('%Y-%m-%d %H:%M:%S')}")
-    else:
-        print(f"No old videos to clear at {time.strftime('%Y-%m-%d %H:%M:%S')}")
-
-""" CLEANING LANDMARK DATA (And Adding Velocitys/Joint Angles) """
+""" ====================================================================================================
+                    LANDMARK POST-PROCESSING (Angles, Velocity, Normalization)
+==================================================================================================== """
 
 BODY_PARTS = {
     "Nose": 0,
@@ -1140,7 +307,8 @@ KEY_BODY_PARTS = [
     "Left Knee", "Right Knee",
 ]
 
-def angle_between(v1, v2):
+def angle_between(v1: list, v2: list) -> float:
+    """Compute angle between two 3D vectors."""
     dot = sum(a * b for a, b in zip(v1, v2))
     norm1 = math.sqrt(sum(a * a for a in v1))
     norm2 = math.sqrt(sum(b * b for b in v2))
@@ -1150,10 +318,12 @@ def angle_between(v1, v2):
     cos_theta = max(min(cos_theta, 1.0), -1.0)
     return math.acos(cos_theta)
 
-def vector(p1, p2):
+def vector(p1: list, p2: list) -> list:
+    """Return vector from point p1 → p2."""
     return [p2['x'] - p1['x'], p2['y'] - p1['y'], p2['z'] - p1['z']]
 
-def compute_joint_angles(frame):
+def compute_joint_angles(frame: list) -> list:
+    """Compute key joint angles for one frame of landmarks."""
     angles = []
     
     def get_point(name):
@@ -1184,7 +354,8 @@ def compute_joint_angles(frame):
     
     return angles
 
-def compute_velocity(prev_frame, curr_frame):
+def compute_velocity(prev_frame: list, curr_frame: list) -> list:
+    """Compute velocity (dx, dy, dz) of all landmarks between two frames."""
     velocity = []
     for p1, p2 in zip(prev_frame, curr_frame):
         dx = p2['x'] - p1['x']
@@ -1193,10 +364,11 @@ def compute_velocity(prev_frame, curr_frame):
         velocity.extend([dx, dy, dz])
     return velocity
 
-def flatten_video(video):
+def flatten_video(landmarks: list) -> list:
+    """Flatten video landmark data into a single numeric vector (x,y,z,visibility,presence + angles + velocity)."""
     flat = []
     prevFrame = None
-    for landmark in video:
+    for landmark in landmarks:
         for frame in landmark:
             for part in KEY_BODY_PARTS:
                 idx = BODY_PARTS[part]
@@ -1210,7 +382,8 @@ def flatten_video(video):
     return flat
 
 
-def normalize_landmarks(landmarks):
+def normalize_landmarks(landmarks: list) -> list:
+    """Center landmarks on hip midpoint to normalize position across frames."""
     normalized = []
 
     for frame in landmarks:
@@ -1236,3 +409,110 @@ def normalize_landmarks(landmarks):
         normalized.append(frame_normalized)
 
     return normalized
+
+""" ====================================================================================================
+                                        FILE MANAGEMENT
+==================================================================================================== """
+
+def cleanup_old_files(folder: str, max_age_minutes: int = 10) -> None:
+    """Delete files in folder older than max_age_minutes."""
+    now = time.time()
+    max_age = max_age_minutes * 60
+
+    for filename in os.listdir(folder):
+        file_path = os.path.join(folder, filename)
+        if os.path.isfile(file_path):
+            file_age = now - os.path.getmtime(file_path)
+            if file_age > max_age:
+                print(f"Deleting old file: {file_path}")
+                os.remove(file_path)
+
+def cleanup_folder(folder: str) -> None:
+    """Remove all files inside folder (non-recursive)."""
+    for filename in os.listdir(folder):
+        file_path = os.path.join(folder, filename)
+        if os.path.isfile(file_path):
+            os.remove(file_path)
+
+def save_prediction(json_filename: str, file_path: str, prediction: float, confidence: float, start: float, end: float, mov: bool):
+    """Save prediction results for a video into a JSON file."""
+    filename = os.path.basename(file_path)
+    new_entry = {
+        filename: {
+            "prediction": prediction,
+            "confidence": confidence,
+            "start": float(start),
+            "end": float(end),
+            "mov": bool(mov),
+        }
+    }
+
+    if os.path.exists(json_filename):
+        with open(json_filename, 'r') as f:
+            try:
+                data = json.load(f)
+            except json.JSONDecodeError:
+                data = {}
+    else:
+        data = {}
+
+    data.update(new_entry)
+
+    with open(json_filename, 'w') as f:
+        json.dump(data, f, indent=2)
+
+def load_predictions(JSON_PATH: str) -> dict:
+    """Load predictions JSON if exists, else return {}."""
+    if os.path.exists(JSON_PATH):
+        with open(JSON_PATH, "r") as f:
+            try:
+                return json.load(f)
+            except json.JSONDecodeError:
+                return {}
+    return {}
+
+def save_predictions(data: dict, JSON_PATH: str) -> None:
+    """Write predictions dict to JSON file."""
+    with open(JSON_PATH, "w") as f:
+        json.dump(data, f, indent=2)
+
+def append_landmarks_to_json(filename: str, landmarks_data: dict, json_path="static/video_landmarks.json") -> None:
+    """Append landmarks data for one video into a shared JSON file."""
+    if os.path.exists(json_path):
+        with open(json_path, "r") as f:
+            try:
+                existing_data = json.load(f)
+            except json.JSONDecodeError:
+                existing_data = {}
+    else:
+        existing_data = {}
+
+    existing_data[filename] = landmarks_data
+
+    with open(json_path, "w") as f:
+        json.dump(existing_data, f, indent=2)
+
+    print(f"Landmarks for {filename} appended to {json_path}")
+
+def clear_old_videos(JSON_PATH: str) -> None:
+    """Remove video entries older than 10 minutes from predictions JSON."""
+    data = load_predictions(JSON_PATH)
+    now_ms = int(time.time() * 1000)
+
+    def is_recent(filename):
+        TEN_MINUTES_MS = 10 * 1000 * 60
+        try:
+            timestamp_str = filename.split('_')[1].split('.')[0]
+            timestamp = int(timestamp_str)
+            age_ms = now_ms - timestamp
+            return age_ms < TEN_MINUTES_MS
+        except (IndexError, ValueError):
+            return True
+
+    filtered_data = {fname: info for fname, info in data.items() if is_recent(fname)}
+
+    if len(filtered_data) != len(data):
+        save_predictions(filtered_data, JSON_PATH)
+        print(f"Cleared old videos at {time.strftime('%Y-%m-%d %H:%M:%S')}")
+    else:
+        print(f"No old videos to clear at {time.strftime('%Y-%m-%d %H:%M:%S')}")

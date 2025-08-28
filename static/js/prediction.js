@@ -70,243 +70,145 @@ document.addEventListener('DOMContentLoaded', function () {
 
   }
   
-// const video = document.getElementById("video");
-// const canvas = document.getElementById("overlay");
-// const ctx = canvas.getContext("2d");
 
-// function resizeCanvas() {
-//   canvas.width = video.clientWidth;
-//   canvas.height = video.clientHeight;
-//   canvas.style.top = video.offsetTop + "px";
-//   canvas.style.left = video.offsetLeft + "px";
-//   canvas.style.pointerEvents = "none";
-// }
+  const video = document.getElementById("video");
+  const videoCaption = document.getElementById("videoCaption");
 
-// video.addEventListener("loadedmetadata", resizeCanvas);
-// window.addEventListener("resize", resizeCanvas);
 
-// // Fetch precomputed landmarks
-// fetch("/static/video_landmarks.json")
-//   .then(res => res.json())
-//   .then(landmarksData => {
-
-//     // Only keep frames with landmarks
-//     const validFrames = landmarksData.filter(f => f.landmarks && f.landmarks.length);
-
-//     function drawLandmarks() {
-//       resizeCanvas(); // ensure canvas always matches video size
-
-//       if (video.paused || video.ended) {
-//         requestAnimationFrame(drawLandmarks);
-//         return;
-//       }
-
-//       const time = video.currentTime;
-
-//       // Find the closest frame with landmarks
-//       let frameData = null;
-//       let minDiff = Infinity;
-
-//       for (let i = 0; i < validFrames.length; i++) {
-//         const diff = Math.abs(validFrames[i].timestamp - time);
-//         if (diff < minDiff) {
-//           minDiff = diff;
-//           frameData = validFrames[i];
-//         }
-//       }
-
-//       // Clear previous drawings
-//       ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-//       // Draw landmarks
-//       if (frameData) {
-//         frameData.landmarks.forEach(lm => {
-//           const x = lm.x * video.clientWidth;
-//           const y = lm.y * video.clientHeight;
-//           ctx.beginPath();
-//           ctx.arc(x, y, 5, 0, 2 * Math.PI);
-//           ctx.fillStyle = "lime";
-//           ctx.fill();
-//         });
-//       }
-
-//       requestAnimationFrame(drawLandmarks);
-//     }
-
-//     video.addEventListener("play", () => {
-//       drawLandmarks();
-//     });
-
-//   })
-//   .catch(err => console.error("Failed to load landmarks:", err));
-const video = document.getElementById("video");
-const videoCaption = document.getElementById("videoCaption");
-
-console.log("Script loaded, video element:", video);
-
-if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-  video.setAttribute("playsinline", "");
-  videoCaption.textContent = "Mobile Landmark Drawing Not Supported.";
-  console.log("Mobile detected → playsinline applied");
-}
-
-const canvas = document.getElementById("overlay");
-const ctx = canvas.getContext("2d");
-console.log("Canvas + context ready:", canvas, ctx);
-
-function updateCanvasSize() {
-  console.log("Updating canvas size...");
-  const rect = video.getBoundingClientRect();
-  const videoAspect = video.videoWidth / video.videoHeight;
-  const rectAspect = rect.width / rect.height;
-
-  let contentWidth, contentHeight, offsetX, offsetY;
-
-  if (rectAspect > videoAspect) {
-    contentHeight = rect.height;
-    contentWidth = videoAspect * contentHeight;
-    offsetX = (rect.width - contentWidth) / 2;
-    offsetY = 0;
-  } else {
-    contentWidth = rect.width;
-    contentHeight = contentWidth / videoAspect;
-    offsetX = 0;
-    offsetY = (rect.height - contentHeight) / 2;
+  if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+    video.setAttribute("playsinline", "");
+    videoCaption.textContent = "Mobile Landmark Drawing Not Supported.";
   }
 
-  canvas.width = contentWidth;
-  canvas.height = contentHeight;
-  canvas.style.top = offsetY + "px";
-  canvas.style.left = offsetX + "px";
+  const canvas = document.getElementById("overlay");
+  const ctx = canvas.getContext("2d");
 
-  console.log("Canvas resized:", { contentWidth, contentHeight, offsetX, offsetY });
+  function updateCanvasSize() {
+    const rect = video.getBoundingClientRect();
+    const videoAspect = video.videoWidth / video.videoHeight;
+    const rectAspect = rect.width / rect.height;
 
-  return { contentWidth, contentHeight, offsetX, offsetY };
-}
+    let contentWidth, contentHeight, offsetX, offsetY;
 
-let start, end;
-
-console.log("Fetching landmarks JSON...");
-fetch("/static/video_landmarks.json")
-  .then(res => {
-    console.log("Fetch response:", res.status);
-    return res.json();
-  })
-  .then(data => {
-    const filename = video.currentSrc.split("/").pop(); // get just the filename
-    const frames = data[filename];
-
-    if (!frames || !frames.length) {
-      console.warn("No landmarks found for:", filename);
-      return;
+    if (rectAspect > videoAspect) {
+      contentHeight = rect.height;
+      contentWidth = videoAspect * contentHeight;
+      offsetX = (rect.width - contentWidth) / 2;
+      offsetY = 0;
+    } else {
+      contentWidth = rect.width;
+      contentHeight = contentWidth / videoAspect;
+      offsetX = 0;
+      offsetY = (rect.height - contentHeight) / 2;
     }
 
-    console.log("Loaded landmarks for", filename, "→", frames.length, "frames");
+    canvas.width = contentWidth;
+    canvas.height = contentHeight;
+    canvas.style.top = offsetY + "px";
+    canvas.style.left = offsetX + "px";
 
-    const validFrames = frames.filter(f => f.landmarks && f.landmarks.length);
+    return { contentWidth, contentHeight, offsetX, offsetY };
+  }
 
-    function drawLandmarks() {
-      console.log("drawLandmarks tick → paused?", video.paused, "ended?", video.ended);
+  let start, end;
 
-      const { contentWidth, contentHeight, offsetX, offsetY } = updateCanvasSize();
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+  fetch("/static/video_landmarks.json")
+    .then(res => {
+      return res.json();
+    })
+    .then(data => {
+      const filename = video.currentSrc.split("/").pop(); // get just the filename
+      const frames = data[filename];
 
-      if (!video.paused && !video.ended) {
-        const time = video.currentTime - start;
-        console.log("Video time:", video.currentTime, "Offset time:", time);
+      if (!frames || !frames.length) {
+        console.warn("No landmarks found for:", filename);
+        return;
+      }
 
-        let frameData = null;
-        let minDiff = Infinity;
+      const validFrames = frames.filter(f => f.landmarks && f.landmarks.length);
 
-        for (let i = 0; i < validFrames.length; i++) {
-          const diff = Math.abs(validFrames[i].timestamp - time);
-          if (diff < minDiff) {
-            minDiff = diff;
-            frameData = validFrames[i];
+      function drawLandmarks() {
+        const { contentWidth, contentHeight, offsetX, offsetY } = updateCanvasSize();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (!video.paused && !video.ended) {
+          const time = video.currentTime - start;
+
+          let frameData = null;
+          let minDiff = Infinity;
+
+          for (let i = 0; i < validFrames.length; i++) {
+            const diff = Math.abs(validFrames[i].timestamp - time);
+            if (diff < minDiff) {
+              minDiff = diff;
+              frameData = validFrames[i];
+            }
+          }
+
+          if (frameData) {
+            frameData.landmarks.forEach((lm, idx) => {
+              const x = offsetX + lm.x * contentWidth;
+              const y = offsetY + lm.y * contentHeight;
+              ctx.beginPath();
+              ctx.arc(x, y, 5, 0, 2 * Math.PI);
+              ctx.fillStyle = "lime";
+              ctx.fill();
+              if (idx === 0) {
+              }
+            });
+          } else {
+            console.warn("No frameData found for current time");
           }
         }
 
-        if (frameData) {
-          console.log("Closest frame:", frameData.timestamp, "diff:", minDiff);
-          frameData.landmarks.forEach((lm, idx) => {
-            const x = offsetX + lm.x * contentWidth;
-            const y = offsetY + lm.y * contentHeight;
-            ctx.beginPath();
-            ctx.arc(x, y, 5, 0, 2 * Math.PI);
-            ctx.fillStyle = "lime";
-            ctx.fill();
-            if (idx === 0) {
-              console.log("First landmark drawn at:", { x, y });
-            }
-          });
-        } else {
-          console.warn("No frameData found for current time");
-        }
+        requestAnimationFrame(drawLandmarks);
       }
 
-      requestAnimationFrame(drawLandmarks);
+      window.addEventListener("resize", () => {
+        updateCanvasSize();
+      });
+
+      function initVideo() {
+    const mov = video.dataset.mov == "True" || false;
+    if (mov) {
+      start = parseFloat(video.dataset.start) || 0;
+      end = parseFloat(video.dataset.end) || 0;
+    } else {
+      start = 0;
+      end = video.duration; // safe if metadata already loaded
     }
 
-    window.addEventListener("resize", () => {
-      console.log("Window resized");
-      updateCanvasSize();
+    video.currentTime = start;
+
+    drawLandmarks();
+
+    // attach drawLandmarks now
+    video.addEventListener("play", () => {
+      drawLandmarks();
     });
 
-    function initVideo() {
-  const mov = video.dataset.mov == "True" || false;
-  console.log("HELLO", mov)
-  if (mov) {
-    start = parseFloat(video.dataset.start) || 0;
-    end = parseFloat(video.dataset.end) || 0;
-  } else {
-    start = 0;
-    end = video.duration; // safe if metadata already loaded
+    video.play().then(() => {
+    }).catch(err => {
+      console.error("Video play error:", err);
+    });
   }
 
-  console.log("Init video → Start:", start, "End:", end, "Mov:", mov);
-
-  video.currentTime = start;
-
-  drawLandmarks();
-
-  // attach drawLandmarks now
-  video.addEventListener("play", () => {
-    console.log("Video play event fired → starting draw loop");
-    drawLandmarks();
-  });
-
-  video.play().then(() => {
-    console.log("Video playback started at", video.currentTime);
-  }).catch(err => {
-    console.error("Video play error:", err);
-  });
-}
-
-// If metadata already loaded, init immediately
-if (video.readyState >= 1) { // HAVE_METADATA
-  console.log("Metadata already available, init immediately");
-  initVideo();
-} else {
-  video.addEventListener("loadedmetadata", () => {
-    console.log("loadedmetadata fired");
+  // If metadata already loaded, init immediately
+  if (video.readyState >= 1) { // HAVE_METADATA
     initVideo();
-  });
-}
-  })
-  .catch(err => console.error("Failed to load landmarks JSON:", err));
-
-// loop video
-video.addEventListener("timeupdate", () => {
-  console.log("timeupdate event. currentTime:", video.currentTime, "end:", end);
-  if (end > 0 && video.currentTime >= end - 0.01) {
-    console.log("Looping video back to start");
-    video.currentTime = start;
-    video.play();
+  } else {
+    video.addEventListener("loadedmetadata", () => {
+      initVideo();
+    });
   }
+    })
+    .catch(err => console.error("Failed to load landmarks JSON:", err));
+
+  // loop video
+  video.addEventListener("timeupdate", () => {
+    if (end > 0 && video.currentTime >= end - 0.01) {
+      video.currentTime = start;
+      video.play();
+    }
+  });
 });
-
-
-
-
-});
-

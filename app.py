@@ -5,28 +5,15 @@ import json
 from flask import Flask, request, render_template, redirect, url_for
 import numpy as np
 from collections import Counter
-from utils import flatten_video, trim_video, normalize_landmarks, create_landmarks, cleanup_old_files, save_prediction, clear_old_videos, cleanup_folder, copy_and_reencode_video, extract_landmarks, ensure_mp4, mov_create_landmarks, mov_trim_video, append_landmarks_to_json
+from utils import flatten_video, normalize_landmarks, cleanup_old_files, save_prediction, clear_old_videos, cleanup_folder, extract_landmarks, ensure_mp4, mov_create_landmarks, append_landmarks_to_json
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 import joblib
-import threading, time
-import psutil, os
-
-def log_memory_usage(note=""):
-    process = psutil.Process(os.getpid())
-    mem_info = process.memory_info()
-    print(f"[MEMORY] {note} RSS={mem_info.rss / (1024*1024):.2f} MB, VMS={mem_info.vms / (1024*1024):.2f} MB")
-
-def monitor_memory():
-    while True:
-        log_memory_usage("Live Monitor")
-        time.sleep(5)
-
-threading.Thread(target=monitor_memory, daemon=True).start()
 
 model = joblib.load("models/golf_swing_model.pkl")
 JSON_PATH = "static/predictions.json"
+JSON_LANDMARKS_PATH = "static/video_landmarks.json"
 
 def allowed_file(filename):
     return '.' in filename and filename.lower().endswith(('.mp4', ".mov"))
@@ -35,19 +22,14 @@ def ends_with_mov(filename):
     return '.' in filename and filename.lower().endswith(".mov")
 
 os.makedirs("static", exist_ok=True)
-os.makedirs("static/trimmed_videos", exist_ok=True)
-os.makedirs("static/landmarks_drawn_videos", exist_ok=True)
-os.makedirs("static/landmarks_drawn_videos_corrupt", exist_ok=True)
+os.makedirs("static/converted_videos", exist_ok=True)
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
-        cleanup_old_files("static/trimmed_videos", max_age_minutes=1)
-        cleanup_old_files("static/landmarks_drawn_videos", max_age_minutes=2)
-        cleanup_old_files("static/landmarks_drawn_videos_corrupt", max_age_minutes=1)
+        cleanup_old_files("static/converted_videos", max_age_minutes=1)
 
         print("-" * 30, "Downloading Video", "-" * 30)
-
         if 'video' not in request.files:
             cleanup_folder("uploads")
             return render_template("upload.html", error="File Error, make sure to upload a mp4 video.")
@@ -70,7 +52,7 @@ def upload_file():
             """ ------------- CODE FOR TRIMMING IF HAD MORE MEMORY ------------------- """
             # print("-" * 30, "Trimming Video", "-" * 30)
             video_path = ensure_mp4(filepath)
-            print(video_path)
+            cleanup_folder("uploads")
             # if mov:
             #     trimmed = mov_trim_video(video_path, start, end)
             # else:
@@ -84,7 +66,6 @@ def upload_file():
             else:
                 fast = False
             print("-" * 30, "Creating Landmarks", "-" * 30)
-            print("HELLO")
             landmarks = mov_create_landmarks(video_path, start_time=float(start), end_time=float(end))
                 # landmarks = create_landmarks(video_path, start_time=float(start))
             landmarks = normalize_landmarks(landmarks)
@@ -127,9 +108,9 @@ def upload_file():
 
             save_prediction(JSON_PATH, video_path, final_prediction, confidence, start, end, mov)
             clear_old_videos(JSON_PATH)
+            clear_old_videos(JSON_LANDMARKS_PATH)
             
             return redirect(url_for('show_result', video_id=filename))
-
         else:
             cleanup_folder("uploads")
             return render_template("upload.html", error="Unsupported file type. Please upload an mp4 video.")

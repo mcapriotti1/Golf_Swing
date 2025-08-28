@@ -189,12 +189,6 @@ function selectModel(type) {
 
 const uploadForm = document.getElementById("uploadForm");
 
-// uploadForm.addEventListener("submit", function (e) {
-//   if (e.submitter && e.submitter.id === "uploadButton") {
-//     document.getElementById("loadingOverlay").hidden = false;
-//   }
-// });
-
 uploadForm.addEventListener("submit", function (e) {
   if (e.submitter && e.submitter.id === "uploadButton") {
     const overlay = document.getElementById("loadingOverlay");
