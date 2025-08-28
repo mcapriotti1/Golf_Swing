@@ -3,6 +3,7 @@ import os
 from moviepy import VideoFileClip
 import cv2
 import mediapipe as mp
+import numpy as np
 
 """==================================================================================================== 
   All the functions in this file would work but require more than 500mb of memory to use for most videos ===================================================================================================="""

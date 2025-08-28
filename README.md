@@ -8,7 +8,7 @@ This project analyzes golf swings and classifies them as either **Pro** or **Ama
 
 1. Clone the repository:  
    ```bash
-   git clone https://github.com/mcapriotti1/golf-swing-analyzer.git
+   git clone https://github.com/mcapriotti1/Golf_Swing.git
    cd golf-swing-analyzer
 2. Install Dependencies:
    ```bash
@@ -33,18 +33,19 @@ This project analyzes golf swings and classifies them as either **Pro** or **Ama
 
 - Used **MediaPipe Pose Landmarker (Heavy)** to extract landmarks.
 - Key body parts used for analysis:
-```python
-KEY_BODY_PARTS = [
-"Left Shoulder", "Right Shoulder", "Left Elbow", "Right Elbow","Left Hip", "Right Hip", "Left Index", 
-"Right Index", "Left Foot Index", "Right Foot Index", "Nose", "Left Knee", "Right Knee" ]
-```
+  ```python
+  KEY_BODY_PARTS = [
+  "Left Shoulder", "Right Shoulder", "Left Elbow", "Right Elbow","Left Hip", "Right Hip", "Left Index", 
+  "Right Index", "Left Foot Index", "Right Foot Index", "Nose", "Left Knee", "Right Knee" ]
 - Extracted landmark data **(x, y, z, visibility, presence)** for each of the listed body parts from **30** evenly spaced frames per video.
+
+  ```python
+  selected_indices = np.linspace(0, total_frames - 1, num=num_frames, dtype=int)
 
 - Code for getting the landmark data from a video.
 
-```python
-landmarks = create_landmarks("example_video.mp4")
-```
+  ```python
+  landmarks = create_landmarks("example_video.mp4")
 
 - Normalized x, y, z positions relative to the left hip, calculated velocities for each body part (first frame initialized to 0), and computed the specified joint angles.
 
