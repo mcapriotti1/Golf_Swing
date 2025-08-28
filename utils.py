@@ -74,6 +74,10 @@ import subprocess
 
 #     return output_path
 
+import os
+import time
+import subprocess
+
 def trim_video(video_path, start_time, end_time, output_path=None):
     start = float(start_time)
     end = float(end_time)
@@ -87,20 +91,40 @@ def trim_video(video_path, start_time, end_time, output_path=None):
         os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, f"video_{timestamp}.mp4")
 
-    # Always re-encode for safety (guaranteed browser support)
-    cmd = [
+    ext = os.path.splitext(video_path)[1].lower()
+
+    # --- If MP4, try fast trim (copy video only) ---
+    if ext == ".mp4":
+        cmd_fast = [
+            "ffmpeg", "-y",
+            "-ss", str(start),
+            "-i", video_path,
+            "-t", str(end - start),
+            "-c:v", "copy",
+            "-an",  # remove audio
+            output_path
+        ]
+        result = subprocess.run(cmd_fast, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if result.returncode == 0 and os.path.exists(output_path) and os.path.getsize(output_path) > 0:
+            return output_path  # fast trim succeeded
+
+    # --- Otherwise or fallback: re-encode safely ---
+    cmd_safe = [
         "ffmpeg", "-y",
         "-ss", str(start),
         "-i", video_path,
         "-t", str(end - start),
-        "-c:v", "libx264", "-preset", "fast", "-crf", "23",   # re-encode video
-        "-c:a", "aac", "-b:a", "128k",                       # re-encode audio
-        "-movflags", "+faststart",                           # make mp4 web-optimized
+        "-vf", "scale=1280:-2",      # downscale width to 1280, maintain aspect ratio
+        "-c:v", "libx264", "-preset", "veryfast", "-crf", "28",
+        "-an",                        # remove audio
+        "-threads", "2",              # lower memory usage
+        "-movflags", "+faststart",
         output_path
     ]
-    subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    subprocess.run(cmd_safe, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     return output_path
+
 
 def copy_and_reencode_video(video_path, output_dir):
     os.makedirs(output_dir, exist_ok=True)
