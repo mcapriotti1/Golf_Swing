@@ -10,12 +10,14 @@ This project analyzes golf swings and classifies them as either **Pro** or **Ama
    ```bash
    git clone https://github.com/mcapriotti1/golf-swing-analyzer.git
    cd golf-swing-analyzer
-2. Install Dependencies
-   pip install -r requirements.txt
+2. Install Dependencies:
+   ```bash
+   pip install -r requirements.txt:
 3. Run the app locally
+  ```bash
    python app.py
 
-![Demo Screenshot](static\images\golf_demo.gif)
+![Demo Screenshot](static/images/golf_demo.gif)
 --
 
 ## Dataset
