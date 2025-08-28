@@ -51,17 +51,13 @@ def trim_video(video_path, start_time, end_time, output_path=None):
 
 
 def ensure_mp4(video_path):
-    """Convert .mov to .mp4 if needed, returns new path."""
-    ext = os.path.splitext(video_path)[1].lower()
-    if ext != ".mov":
-        return video_path  # already mp4 or something else
-    
+    """Re-encode video to MP4 (H.264 + AAC), returns new path."""
     timestamp = int(time.time() * 1000)
     output_dir = "static/converted_videos"
     os.makedirs(output_dir, exist_ok=True)
     converted_path = os.path.join(output_dir, f"converted_{timestamp}.mp4")
 
-    # Convert MOV to MP4 with H.264 + AAC (widely supported)
+    # Convert any video to MP4 with H.264 video + AAC audio
     cmd = [
         "ffmpeg", "-y",
         "-i", video_path,
@@ -107,6 +103,7 @@ def mov_trim_video(video_path, start_time, end_time, output_path=None):
         "-c", "copy",
         output_path
     ]
+    
     subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     return output_path
@@ -278,7 +275,7 @@ def mov_create_landmarks(video_path, num_frames=30, start_time=None, end_time=No
 
 
 
-def create_landmarks(video_path, num_frames=30, start_time=None):
+def create_landmarks(video_path, num_frames=31, start_time=None):
     """
     Extract pose landmarks from a video using MediaPipe Pose Landmarker.
 
@@ -1013,7 +1010,7 @@ def save_prediction(json_filename, file_path, prediction, confidence, start, end
             "confidence": confidence,
             "start": float(start),
             "end": float(end),
-            "mov": bool(mov)
+            "mov": bool(mov),
         }
     }
 
@@ -1044,6 +1041,32 @@ def load_predictions(JSON_PATH):
 def save_predictions(data, JSON_PATH):
     with open(JSON_PATH, "w") as f:
         json.dump(data, f, indent=2)
+
+
+import os
+import json
+
+def append_landmarks_to_json(filename, landmarks_data, json_path="static/video_landmarks.json"):
+
+    # Load existing data if the file exists
+    if os.path.exists(json_path):
+        with open(json_path, "r") as f:
+            try:
+                existing_data = json.load(f)
+            except json.JSONDecodeError:
+                existing_data = {}
+    else:
+        existing_data = {}
+
+    # Add or update the entry for the filename
+    existing_data[filename] = landmarks_data
+
+    # Write back the updated dictionary
+    with open(json_path, "w") as f:
+        json.dump(existing_data, f, indent=2)
+
+    print(f"Landmarks for {filename} appended to {json_path}")
+
 
 def clear_old_videos(JSON_PATH):
     data = load_predictions(JSON_PATH)

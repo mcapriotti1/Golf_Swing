@@ -5,7 +5,7 @@ import json
 from flask import Flask, request, render_template, redirect, url_for
 import numpy as np
 from collections import Counter
-from utils import flatten_video, trim_video, normalize_landmarks, create_landmarks, cleanup_old_files, save_prediction, clear_old_videos, cleanup_folder, copy_and_reencode_video, extract_landmarks, ensure_mp4, mov_create_landmarks, mov_trim_video
+from utils import flatten_video, trim_video, normalize_landmarks, create_landmarks, cleanup_old_files, save_prediction, clear_old_videos, cleanup_folder, copy_and_reencode_video, extract_landmarks, ensure_mp4, mov_create_landmarks, mov_trim_video, append_landmarks_to_json
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -55,6 +55,7 @@ def upload_file():
         file = request.files['video']
         start = request.form["start"]
         end = request.form["end"]
+        end = str(float(end) - 0.1)
         speed = request.form["model_type"]
 
         if file.filename == '':
@@ -66,34 +67,33 @@ def upload_file():
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
             file.save(filepath)
 
-            print("-" * 30, "Trimming Video", "-" * 30)
+            """ ------------- CODE FOR TRIMMING IF HAD MORE MEMORY ------------------- """
+            # print("-" * 30, "Trimming Video", "-" * 30)
             video_path = ensure_mp4(filepath)
             print(video_path)
-            if mov:
-                trimmed = mov_trim_video(video_path, start, end)
-            else:
-                trimmed = trim_video(video_path, start, end)
-            cleanup_folder("uploads")
-            if not trimmed:
-                return render_template("upload.html", error="Your video is too long, upload a video under 30 seconds.")
+            # if mov:
+            #     trimmed = mov_trim_video(video_path, start, end)
+            # else:
+            # trimmed = mov_trim_video(video_path, start, end)
+            
+            # if not trimmed:
+            #     return render_template("upload.html", error="Your video is too long, upload a video under 30 seconds.")
 
-            # Run your pipeline here
             if speed == "lite":
                 fast = True
             else:
                 fast = False
             print("-" * 30, "Creating Landmarks", "-" * 30)
-            if mov:
-                landmarks = mov_create_landmarks(trimmed, start_time=float(start), end_time=float(end))
-            else:
-                landmarks = create_landmarks(trimmed, start_time=float(start))
+            print("HELLO")
+            landmarks = mov_create_landmarks(video_path, start_time=float(start), end_time=float(end))
+                # landmarks = create_landmarks(video_path, start_time=float(start))
             landmarks = normalize_landmarks(landmarks)
 
             if not landmarks:
                 return render_template("upload.html", error="Your body could not be detected, try uploading a clear video of the swing")
             
             flattened_landmarks = np.array(flatten_video(landmarks))
-            print(len(flattened_landmarks))
+            print("LENGTH:", len(flattened_landmarks))
             if len(flattened_landmarks) != 67530:
                 return render_template("upload.html", error="Video too short, or your body could not be detected, try uploading a clearer video.")
 
@@ -114,25 +114,28 @@ def upload_file():
             else:
                 final_prediction = "Amateur"
 
-            print("-" * 30, "Drawing Landmarks", "-" * 30)
+            print("-" * 30, "Extracting Landmarks For Video", "-" * 30)
+            
+            # Draw on backend if have the memory
+
             # drawn_video_path = draw_landmarks(trimmed, fast=fast)
-            print("COPYING AND RENCODING")
-            # copy_and_reencode_video(drawn_video_path, "static/landmarks_drawn_videos")
-            landmarks_data = extract_landmarks(trimmed, fast)
-            import json
-            with open("static/video_landmarks.json", "w") as f:
-                json.dump(landmarks_data, f)
-            save_prediction(JSON_PATH, trimmed, final_prediction, confidence, start, end, mov)
+
+            landmarks_data = extract_landmarks(video_path, fast)
+            filename = os.path.basename(video_path)
+
+            append_landmarks_to_json(filename, landmarks_data)
+
+            save_prediction(JSON_PATH, video_path, final_prediction, confidence, start, end, mov)
             clear_old_videos(JSON_PATH)
             
-            trimmed_filename = os.path.basename(trimmed)
-            return redirect(url_for('show_result', video_id=trimmed_filename))
+            return redirect(url_for('show_result', video_id=filename))
 
         else:
             cleanup_folder("uploads")
             return render_template("upload.html", error="Unsupported file type. Please upload an mp4 video.")
 
     return render_template('upload.html')
+
 @app.route('/result/<video_id>')
 def show_result(video_id):
     # Load predictions json
@@ -152,7 +155,7 @@ def show_result(video_id):
     end = prediction_data['end']
     mov = prediction_data['mov']
 
-    annotated_video_url = f"trimmed_videos/{video_id}"
+    annotated_video_url = f"converted_videos/{video_id}"
 
     return render_template(
         'result.html',

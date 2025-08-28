@@ -1,37 +1,23 @@
 {
-  "video_1756378104043.mp4": {
+  "converted_1756382067550.mp4": {
     "prediction": "Pro",
-    "confidence": 0.67,
-    "start": 1.5,
-    "end": 5.2,
+    "confidence": 0.74,
+    "start": 0.0,
+    "end": 5.1000000000000005,
     "mov": false
   },
-  "video_1756378131715.mp4": {
+  "converted_1756382085990.mp4": {
+    "prediction": "Pro",
+    "confidence": 0.65,
+    "start": 1.9,
+    "end": 5.1000000000000005,
+    "mov": false
+  },
+  "converted_1756382174294.mp4": {
     "prediction": "Pro",
     "confidence": 0.71,
     "start": 0.0,
-    "end": 5.3,
+    "end": 5.2,
     "mov": true
-  },
-  "video_1756378189395.mp4": {
-    "prediction": "Pro",
-    "confidence": 0.74,
-    "start": 1.7,
-    "end": 3.8,
-    "mov": false
-  },
-  "video_1756378223577.mp4": {
-    "prediction": "Pro",
-    "confidence": 0.75,
-    "start": 1.2,
-    "end": 4.5,
-    "mov": false
-  },
-  "video_1756378256591.mp4": {
-    "prediction": "Amateur",
-    "confidence": 0.74,
-    "start": 0.5,
-    "end": 2.2,
-    "mov": false
   }
 }

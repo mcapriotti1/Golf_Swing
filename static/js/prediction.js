@@ -193,10 +193,17 @@ fetch("/static/video_landmarks.json")
     return res.json();
   })
   .then(data => {
-    console.log("Landmarks JSON loaded:", data.length, "frames");
+    const filename = video.currentSrc.split("/").pop(); // get just the filename
+    const frames = data[filename];
 
-    const validFrames = data.filter(f => f.landmarks && f.landmarks.length);
-    console.log("Valid frames count:", validFrames.length);
+    if (!frames || !frames.length) {
+      console.warn("No landmarks found for:", filename);
+      return;
+    }
+
+    console.log("Loaded landmarks for", filename, "→", frames.length, "frames");
+
+    const validFrames = frames.filter(f => f.landmarks && f.landmarks.length);
 
     function drawLandmarks() {
       console.log("drawLandmarks tick → paused?", video.paused, "ended?", video.ended);
