@@ -16,44 +16,15 @@ import subprocess
 
 """ ------------------------------ EXTRACTING LANDMARK DATA --------------------------------------------- """
 
-def trim_video(video_path, start_time, end_time, output_path=None):
-    import time
-    import os
-
-    start = float(start_time)
-    end = float(end_time)
-
-    if end - start > 30:
-      return None
-    
-    if output_path is None:
-        timestamp = int(time.time() * 1000)
-        output_dir = "static/trimmed_videos"
-        os.makedirs(output_dir, exist_ok=True)
-        output_path = os.path.join(output_dir, f"video_{timestamp}.mp4")
-    
-    with VideoFileClip(video_path) as video:
-        video_duration = video.duration
-        # Ensure end_time does not exceed video duration
-        if end > video_duration:
-            print(f"Warning: Requested end_time {end_time} exceeds video duration {video_duration}. Adjusting end_time.")
-            end = video_duration
-    
-        if start < 0:
-            print(f"Warning: Requested start_time {start} is less than 0. Adjusting start_time.")
-            start = 0
-        
-        trimmed = video.subclipped(start, end)
-        trimmed.write_videofile(output_path, codec="libx264", audio_codec="aac")
-    
-    return output_path
-
 # def trim_video(video_path, start_time, end_time, output_path=None):
+#     import time
+#     import os
+
 #     start = float(start_time)
 #     end = float(end_time)
 
 #     if end - start > 30:
-#         return None
+#       return None
     
 #     if output_path is None:
 #         timestamp = int(time.time() * 1000)
@@ -61,18 +32,47 @@ def trim_video(video_path, start_time, end_time, output_path=None):
 #         os.makedirs(output_dir, exist_ok=True)
 #         output_path = os.path.join(output_dir, f"video_{timestamp}.mp4")
     
-#     # Use ffmpeg to trim without re-encoding (super fast, low memory)
-#     cmd = [
-#         "ffmpeg", "-y",
-#         "-ss", str(start),
-#         "-i", video_path,
-#         "-t", str(end-start),
-#         "-c", "copy",
-#         output_path
-#     ]
-#     subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
+#     with VideoFileClip(video_path) as video:
+#         video_duration = video.duration
+#         # Ensure end_time does not exceed video duration
+#         if end > video_duration:
+#             print(f"Warning: Requested end_time {end_time} exceeds video duration {video_duration}. Adjusting end_time.")
+#             end = video_duration
+    
+#         if start < 0:
+#             print(f"Warning: Requested start_time {start} is less than 0. Adjusting start_time.")
+#             start = 0
+        
+#         trimmed = video.subclipped(start, end)
+#         trimmed.write_videofile(output_path, codec="libx264", audio_codec="aac")
+    
 #     return output_path
+
+def trim_video(video_path, start_time, end_time, output_path=None):
+    start = float(start_time)
+    end = float(end_time)
+
+    if end - start > 30:
+        return None
+    
+    if output_path is None:
+        timestamp = int(time.time() * 1000)
+        output_dir = "static/trimmed_videos"
+        os.makedirs(output_dir, exist_ok=True)
+        output_path = os.path.join(output_dir, f"video_{timestamp}.mp4")
+    
+    # Use ffmpeg to trim without re-encoding (super fast, low memory)
+    cmd = [
+        "ffmpeg", "-y",
+        "-ss", str(start),
+        "-i", video_path,
+        "-t", str(end-start),
+        "-c", "copy",
+        output_path
+    ]
+    subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    return output_path
 
 # import os
 # import time
