@@ -140,18 +140,22 @@ document.addEventListener('DOMContentLoaded', function () {
 //   })
 //   .catch(err => console.error("Failed to load landmarks:", err));
 const video = document.getElementById("video");
-const videoCaption = document.getElementById("videoCaption")
+const videoCaption = document.getElementById("videoCaption");
 
-// Apply playsinline only on mobile/iOS
+console.log("Script loaded, video element:", video);
+
 if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
   video.setAttribute("playsinline", "");
-  videoCaption.textContent = "Mobile Landmark Drawing Not Supported."
+  videoCaption.textContent = "Mobile Landmark Drawing Not Supported.";
+  console.log("Mobile detected → playsinline applied");
 }
 
 const canvas = document.getElementById("overlay");
 const ctx = canvas.getContext("2d");
+console.log("Canvas + context ready:", canvas, ctx);
 
 function updateCanvasSize() {
+  console.log("Updating canvas size...");
   const rect = video.getBoundingClientRect();
   const videoAspect = video.videoWidth / video.videoHeight;
   const rectAspect = rect.width / rect.height;
@@ -175,20 +179,35 @@ function updateCanvasSize() {
   canvas.style.top = offsetY + "px";
   canvas.style.left = offsetX + "px";
 
+  console.log("Canvas resized:", { contentWidth, contentHeight, offsetX, offsetY });
+
   return { contentWidth, contentHeight, offsetX, offsetY };
 }
 
+let start, end;
+
+console.log("Fetching landmarks JSON...");
 fetch("/static/video_landmarks.json")
-  .then(res => res.json())
+  .then(res => {
+    console.log("Fetch response:", res.status);
+    return res.json();
+  })
   .then(data => {
+    console.log("Landmarks JSON loaded:", data.length, "frames");
+
     const validFrames = data.filter(f => f.landmarks && f.landmarks.length);
+    console.log("Valid frames count:", validFrames.length);
 
     function drawLandmarks() {
+      console.log("drawLandmarks tick → paused?", video.paused, "ended?", video.ended);
+
       const { contentWidth, contentHeight, offsetX, offsetY } = updateCanvasSize();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       if (!video.paused && !video.ended) {
-        const time = video.currentTime;
+        const time = video.currentTime - start;
+        console.log("Video time:", video.currentTime, "Offset time:", time);
+
         let frameData = null;
         let minDiff = Infinity;
 
@@ -201,24 +220,86 @@ fetch("/static/video_landmarks.json")
         }
 
         if (frameData) {
-          frameData.landmarks.forEach(lm => {
+          console.log("Closest frame:", frameData.timestamp, "diff:", minDiff);
+          frameData.landmarks.forEach((lm, idx) => {
             const x = offsetX + lm.x * contentWidth;
             const y = offsetY + lm.y * contentHeight;
             ctx.beginPath();
             ctx.arc(x, y, 5, 0, 2 * Math.PI);
             ctx.fillStyle = "lime";
             ctx.fill();
+            if (idx === 0) {
+              console.log("First landmark drawn at:", { x, y });
+            }
           });
+        } else {
+          console.warn("No frameData found for current time");
         }
       }
 
       requestAnimationFrame(drawLandmarks);
     }
 
-    video.addEventListener("play", drawLandmarks);
-    window.addEventListener("resize", updateCanvasSize);
+    window.addEventListener("resize", () => {
+      console.log("Window resized");
+      updateCanvasSize();
+    });
+
+    function initVideo() {
+  const mov = video.dataset.mov == "True" || false;
+  console.log("HELLO", mov)
+  if (mov) {
+    start = parseFloat(video.dataset.start) || 0;
+    end = parseFloat(video.dataset.end) || 0;
+  } else {
+    start = 0;
+    end = video.duration; // safe if metadata already loaded
+  }
+
+  console.log("Init video → Start:", start, "End:", end, "Mov:", mov);
+
+  video.currentTime = start;
+
+  drawLandmarks();
+
+  // attach drawLandmarks now
+  video.addEventListener("play", () => {
+    console.log("Video play event fired → starting draw loop");
+    drawLandmarks();
+  });
+
+  video.play().then(() => {
+    console.log("Video playback started at", video.currentTime);
+  }).catch(err => {
+    console.error("Video play error:", err);
+  });
+}
+
+// If metadata already loaded, init immediately
+if (video.readyState >= 1) { // HAVE_METADATA
+  console.log("Metadata already available, init immediately");
+  initVideo();
+} else {
+  video.addEventListener("loadedmetadata", () => {
+    console.log("loadedmetadata fired");
+    initVideo();
+  });
+}
   })
-  .catch(err => console.error(err));
+  .catch(err => console.error("Failed to load landmarks JSON:", err));
+
+// loop video
+video.addEventListener("timeupdate", () => {
+  console.log("timeupdate event. currentTime:", video.currentTime, "end:", end);
+  if (end > 0 && video.currentTime >= end - 0.01) {
+    console.log("Looping video back to start");
+    video.currentTime = start;
+    video.play();
+  }
+});
+
+
+
 
 });
 
