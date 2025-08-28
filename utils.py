@@ -48,26 +48,54 @@ import subprocess
     
 #     return output_path
 
+# def trim_video(video_path, start_time, end_time, output_path=None):
+#     start = float(start_time)
+#     end = float(end_time)
+
+#     if end - start > 30:
+#         return None
+    
+#     if output_path is None:
+#         timestamp = int(time.time() * 1000)
+#         output_dir = "static/trimmed_videos"
+#         os.makedirs(output_dir, exist_ok=True)
+#         output_path = os.path.join(output_dir, f"video_{timestamp}.mp4")
+    
+#     # Use ffmpeg to trim without re-encoding (super fast, low memory)
+#     cmd = [
+#         "ffmpeg", "-y",
+#         "-ss", str(start),
+#         "-i", video_path,
+#         "-t", str(end-start),
+#         "-c", "copy",
+#         output_path
+#     ]
+#     subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+#     return output_path
+
 def trim_video(video_path, start_time, end_time, output_path=None):
     start = float(start_time)
     end = float(end_time)
 
     if end - start > 30:
-        return None
-    
+        return None  # enforce 30s max
+
     if output_path is None:
         timestamp = int(time.time() * 1000)
         output_dir = "static/trimmed_videos"
         os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, f"video_{timestamp}.mp4")
-    
-    # Use ffmpeg to trim without re-encoding (super fast, low memory)
+
+    # Always re-encode for safety (guaranteed browser support)
     cmd = [
         "ffmpeg", "-y",
         "-ss", str(start),
         "-i", video_path,
-        "-t", str(end-start),
-        "-c", "copy",
+        "-t", str(end - start),
+        "-c:v", "libx264", "-preset", "fast", "-crf", "23",   # re-encode video
+        "-c:a", "aac", "-b:a", "128k",                       # re-encode audio
+        "-movflags", "+faststart",                           # make mp4 web-optimized
         output_path
     ]
     subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
