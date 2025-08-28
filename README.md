@@ -47,15 +47,30 @@ This project analyzes golf swings and classifies them as either **Pro** or **Ama
   ```python
   landmarks = create_landmarks("example_video.mp4")
 
-- Normalized x, y, z positions relative to the left hip, calculated velocities for each body part (first frame initialized to 0), and computed the specified joint angles.
+- First we normalize x, y, z positions relative to the left hip:
 
-```python
-joints_to_compute = [
-  ("Right Shoulder", "Right Elbow", "Right Index"), ("Left Hip", "Left Knee", "Left Foot Index"),
-  ("Right Hip", "Right Knee", "Right Foot Index"), ("Left Shoulder", "Left Hip", "Left Foot Index"),
-  ("Right Shoulder", "Right Hip", "Right Foot Index"), ("Left Elbow", "Left Shoulder", "Left Hip"),
-  ("Right Elbow", "Right Shoulder", "Right Hip") ]
-```
+  ```python
+  normalized = normalize_landmarks(landmarks)
+
+- We then calculate velocities for each body part (first frame initialized to 0)
+
+  ```python
+    velocity = compute_velocity(prev_frame, frame)
+
+- Next we compute the specified joint angles.
+
+  ```python
+    joints_to_compute = [
+        ("Right Shoulder", "Right Elbow", "Right Index"), ("Left Hip", "Left Knee", "Left Foot Index"),
+        ("Right Hip", "Right Knee", "Right Foot Index"), ("Left Shoulder", "Left Hip", "Left Foot Index"),
+        ("Right Shoulder", "Right Hip", "Right Foot Index"), ("Left Elbow", "Left Shoulder", "Left Hip"),
+        ("Right Elbow", "Right Shoulder", "Right Hip") ]
+    angles = compute_joint_angles(frame)
+
+- Velocities and joint angles are calculated frame by frame, which is done automatically while flattening the array.
+
+  ```python
+  flattened = flatten_video(normalized)
 
 ---
 
