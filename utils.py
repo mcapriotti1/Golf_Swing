@@ -37,7 +37,7 @@ def ensure_mp4(video_path:str) -> str:
         "-strict", "experimental",
         converted_path
     ]
-    subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    subprocess.run(cmd, check=True)
 
     return converted_path
 
