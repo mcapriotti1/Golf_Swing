@@ -10,24 +10,19 @@ This project analyzes golf swings and classifies them as either **Pro** or **Ama
    ```bash
    git clone https://github.com/mcapriotti1/Golf_Swing.git
    cd golf-swing-analyzer
-2. Install Dependencies:
+2. Install Dependencies (Use Python 3.12.6):
    ```bash
    pip install -r requirements.txt:
 3. Run the app locally
    ```bash
    python app.py
 
-![Demo Screenshot](static/images/golf_demo.gif)
---
-
-## Dataset
-
-- Collected 100 golf swing videos:
-  - 50 Pro swings
-  - 50 Amateur swings
-- Videos were labeled manually.
-
----
+## Demo
+<div style="text-align: center">
+  <img src="static/images/golf_demo.gif" 
+     alt="Demo Screenshot" 
+     style="display: block; margin: 0 auto;">
+</div>
 
 ## Pose Extraction
 
@@ -74,20 +69,83 @@ This project analyzes golf swings and classifies them as either **Pro** or **Ama
 
 ---
 
+
+## Dataset
+   - Collected 100 golf swing videos:
+     - 50 Pro swings
+     - 50 Amateur swings
+   - Videos were labeled manually.
 ## Model Training
 
-- Used **Random Forest Classifier** from **scikit-learn**.
-- Example training code:
+We use a **Random Forest Classifier** to classify golf swings as Pro or Amateur. The training process includes data preparation, model training, and evaluation.
+
+### 1. Feature Preparation
+Each video is converted into a flattened feature vector containing:
+- **Normalized landmark positions** (x, y, z relative to left hip)  
+- **Velocities** for each body part (frame-to-frame changes)  
+- **Joint angles** computed from key landmarks  
+
+This flattening allows the Random Forest model to process a single vector per video:
+
+   ```python
+    X_flat = np.array([flatten_video(video) for video in X])
+```
+
+### 2. Train/Test Split
+
+Due to the small dataset, The dataset is split into 80% training and 20% testing while preserving the Pro/Amateur distribution (stratified), a fixed random seed is used to ensure reproducibility of results.:
+```python
+from sklearn.model_selection import train_test_split
+X_train, X_test, y_train, y_test = train_test_split(
+    X_flat, y, test_size=0.2, stratify=y, random_state=seed
+)
+```
+
+### 3.Model Setup
+
+We train a Random Forest Classifier with 100 trees:
 
 ```python
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
-import numpy as np
 
-model = RandomForestClassifier(n_estimators=100, random_state=76)
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, stratify=y, random_state=42)
+model = RandomForestClassifier(n_estimators=100, random_state=seed)
 model.fit(X_train, y_train)
+```
+
+### 4. Evaluation:
+
+The model is evaluated using precision, recall, F1-score, and support:
+
+```python
+from sklearn.metrics import classification_report
+
 y_pred = model.predict(X_test)
 print(classification_report(y_test, y_pred))
 ```
+
+### 5. Training Function:
+
+```python
+def train_random_forest(X, y):
+    seed = set_seeds()
+    print("\n=== Random Forest Classifier ===")
+    X_flat = np.array([flatten_video(video) for video in X])
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_flat, y, test_size=0.2, stratify=y, random_state=seed
+    )
+
+    model = RandomForestClassifier(n_estimators=100, random_state=76)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+
+    print(classification_report(y_test, y_pred))
+    return model, y_test, y_pred
+```
+
+## Credits
+
+- [MediaPipe](https://developers.google.com/mediapipe) – for pose landmark detection  
+- [scikit-learn](https://scikit-learn.org/) – for machine learning models  
+- [OpenCV](https://opencv.org/) – for video processing  
+- [NumPy](https://numpy.org/) – for numerical computations  
+
