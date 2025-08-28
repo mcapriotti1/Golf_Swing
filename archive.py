@@ -4,6 +4,12 @@ from moviepy import VideoFileClip
 import cv2
 import mediapipe as mp
 import numpy as np
+import random
+import tensorflow as tf
+from utils import flatten_video, KEY_BODY_PARTS, BODY_PARTS
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import classification_report
 
 """==================================================================================================== 
   All the functions in this file would work but require more than 500mb of memory to use for most videos ===================================================================================================="""
@@ -249,3 +255,23 @@ def draw_landmarks(video_path, output_dir="static/landmarks_drawn_videos_corrupt
 
     print(f"Output video saved to: {output_path}")
     return output_path
+
+def set_seeds(seed=np.random.randint(0, 10000)):
+    random.seed(seed)     
+    np.random.seed(seed)    
+    return seed
+
+def train_random_forest(X, y):
+    seed = set_seeds()
+    print("\n=== Random Forest Classifier ===")
+    X_flat = np.array([flatten_video(video) for video in X])
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_flat, y, test_size=0.2, stratify=y, random_state=seed
+    )
+
+    model = RandomForestClassifier(n_estimators=100, random_state=seed)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+
+    print(classification_report(y_test, y_pred))
+    return model, y_test, y_pred
