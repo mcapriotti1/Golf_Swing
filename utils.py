@@ -5,6 +5,7 @@ import os
 import time
 import json
 import cv2
+import shutil
 import subprocess
 os.environ["OPENCV_VIDEOIO_PRIORITY_MSMF"] = "0" 
 os.environ["OPENCV_VIDEOIO_PRIORITY_AVFOUNDATION"] = "0"
@@ -13,73 +14,101 @@ os.environ["OPENCV_VIDEOIO_PRIORITY_AVFOUNDATION"] = "0"
                                             VIDEO UTILITIES
    ==================================================================================================== """
 
-def ensure_mp4(video_path:str) -> str:
+# def ensure_mp4(video_path:str) -> str:
+#     """
+#     Re-encode a video to MP4 (H.264 video + AAC audio).
+
+#     Args:
+#         video_path (str): Input video file.
+
+#     Returns:
+#         str: Path to converted MP4 file.
+#     """
+
+#     timestamp = int(time.time() * 1000)
+#     output_dir = "static/converted_videos"
+#     os.makedirs(output_dir, exist_ok=True)
+#     converted_path = os.path.join(output_dir, f"converted_{timestamp}.mp4")
+
+#     cmd = [
+#         "ffmpeg", "-y",
+#         "-i", video_path,
+#         "-c:v", "libx264",
+#         "-c:a", "aac",
+#         "-strict", "experimental",
+#         converted_path
+#     ]
+#     subprocess.run(cmd, check=True)
+
+#     return converted_path
+
+# def mov_trim_video(video_path: str, start_time: float, end_time: float, output_path: str = None) -> str:
+#     """
+#     Trim a MOV/MP4 video between start and end timestamps.
+
+#     Args:
+#         video_path (str): Path to source video.
+#         start_time (float): Start time in seconds.
+#         end_time (float): End time in seconds.
+#         output_path (str, optional): Output path for trimmed video.
+
+#     Returns:
+#         str | None: Trimmed video path, or None if duration exceeds 30s.
+#     """
+#     start = float(start_time)
+#     end = float(end_time)
+#     duration = end - start
+
+#     if duration > 30:
+#         return None
+    
+#     if output_path is None:
+#         timestamp = int(time.time() * 1000)
+#         output_dir = "static/trimmed_videos"
+#         os.makedirs(output_dir, exist_ok=True)
+#         output_path = os.path.join(output_dir, f"video_{timestamp}.mp4")
+
+#     cmd = [
+#         "ffmpeg", "-y",
+#         "-ss", str(start),
+#         "-i", video_path,
+#         "-t", str(duration),
+#         "-map_metadata", "0",
+#         "-c", "copy",
+#         output_path
+#     ]
+    
+#     subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+#     return output_path
+
+def copy_video(video_path: str, start, end, output_path: str = None) -> str:
     """
-    Re-encode a video to MP4 (H.264 video + AAC audio).
-
-    Args:
-        video_path (str): Input video file.
-
-    Returns:
-        str: Path to converted MP4 file.
-    """
-
-    timestamp = int(time.time() * 1000)
-    output_dir = "static/converted_videos"
-    os.makedirs(output_dir, exist_ok=True)
-    converted_path = os.path.join(output_dir, f"converted_{timestamp}.mp4")
-
-    cmd = [
-        "ffmpeg", "-y",
-        "-i", video_path,
-        "-c:v", "libx264",
-        "-c:a", "aac",
-        "-strict", "experimental",
-        converted_path
-    ]
-    subprocess.run(cmd, check=True)
-
-    return converted_path
-
-def mov_trim_video(video_path: str, start_time: float, end_time: float, output_path: str = None) -> str:
-    """
-    Trim a MOV/MP4 video between start and end timestamps.
+    Copy a MOV/MP4 video to a safe location (no trimming).
 
     Args:
         video_path (str): Path to source video.
-        start_time (float): Start time in seconds.
-        end_time (float): End time in seconds.
-        output_path (str, optional): Output path for trimmed video.
+        output_path (str, optional): Destination path for copied video.
 
     Returns:
-        str | None: Trimmed video path, or None if duration exceeds 30s.
+        str: Path to copied video.
     """
-    start = float(start_time)
-    end = float(end_time)
-    duration = end - start
 
-    if duration > 30:
+    start = float(start)
+    end = float(end)
+
+    if end - start > 30:
         return None
     
     if output_path is None:
         timestamp = int(time.time() * 1000)
-        output_dir = "static/trimmed_videos"
+        output_dir = "static/uploaded_videos"
         os.makedirs(output_dir, exist_ok=True)
         output_path = os.path.join(output_dir, f"video_{timestamp}.mp4")
 
-    cmd = [
-        "ffmpeg", "-y",
-        "-ss", str(start),
-        "-i", video_path,
-        "-t", str(duration),
-        "-map_metadata", "0",
-        "-c", "copy",
-        output_path
-    ]
-    
-    subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
+    shutil.move(video_path, output_path)  # preserves metadata & is efficient
     return output_path
+
 
 """ ====================================================================================================
                                         LANDMARK EXTRACTION
@@ -119,6 +148,7 @@ def mov_create_landmarks(video_path: str, num_frames:int = 30, start_time: float
     fps = cap.get(cv2.CAP_PROP_FPS)
     total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
     duration = total_frames / fps
+    print("DURATION:", duration)
 
     if start_time is None or end_time is None:
         raise ValueError("MOV videos require start_time and end_time")
@@ -165,7 +195,7 @@ def mov_create_landmarks(video_path: str, num_frames:int = 30, start_time: float
     return landmarks
 
 # Gathering Landmark Data for video display
-def extract_landmarks(video_path, fast=False):
+def extract_landmarks(video_path, start, end, fast=False):
     """
     Extracts pose landmarks from a video in a memory-efficient way.
 
@@ -193,6 +223,14 @@ def extract_landmarks(video_path, fast=False):
         print(f"Invalid video metadata: {video_path}")
         cap.release()
         return None
+    
+    start = float(start)
+    end = float(end)
+    start_frame = int(start * fps)
+    end_frame = int(end * fps)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    if end_frame > total_frames:
+        end_frame = total_frames - 1
 
     # --- MediaPipe setup ---
     mp_tasks = mp.tasks
@@ -217,10 +255,16 @@ def extract_landmarks(video_path, fast=False):
     last_result = None
     target_interval_ms = 100 if fast else 20  # detect every 0.3s in fast mode
 
+    cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+
     with PoseLandmarker.create_from_options(options) as landmarker:
         while True:
             success, frame = cap.read()
             if not success:
+                break
+
+            current_frame = int(cap.get(cv2.CAP_PROP_POS_FRAMES)) - 1
+            if current_frame > end_frame:
                 break
 
             timestamp = frame_idx / fps

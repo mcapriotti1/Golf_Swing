@@ -5,7 +5,7 @@ import json
 from flask import Flask, request, render_template, redirect, url_for
 import numpy as np
 from collections import Counter
-from utils import flatten_video, normalize_landmarks, cleanup_old_files, save_prediction, clear_old_videos, cleanup_folder, extract_landmarks, ensure_mp4, mov_create_landmarks, append_landmarks_to_json
+from utils import flatten_video, normalize_landmarks, cleanup_old_files, save_prediction, clear_old_videos, cleanup_folder, extract_landmarks, mov_create_landmarks, append_landmarks_to_json, copy_video
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -22,12 +22,13 @@ def ends_with_mov(filename):
     return '.' in filename and filename.lower().endswith(".mov")
 
 os.makedirs("static", exist_ok=True)
-os.makedirs("static/converted_videos", exist_ok=True)
+os.makedirs("static/uploaded_videos", exist_ok=True)
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
-        cleanup_old_files("static/converted_videos", max_age_minutes=1)
+        # cleanup_old_files("static/converted_videos", max_age_minutes=1)
+        cleanup_old_files("static/uploaded_videos", max_age_minutes=2)
 
         print("-" * 30, "Downloading Video", "-" * 30)
         if 'video' not in request.files:
@@ -51,22 +52,24 @@ def upload_file():
 
             """ ------------- CODE FOR TRIMMING IF HAD MORE MEMORY ------------------- """
             # print("-" * 30, "Trimming Video", "-" * 30)
-            video_path = ensure_mp4(filepath)
+            # video_path = ensure_mp4(filepath)
+            copy = copy_video(filepath, float(start), float(end))
             cleanup_folder("uploads")
+
             # if mov:
             #     trimmed = mov_trim_video(video_path, start, end)
             # else:
             # trimmed = mov_trim_video(video_path, start, end)
             
-            # if not trimmed:
-            #     return render_template("upload.html", error="Your video is too long, upload a video under 30 seconds.")
+            if not copy:
+                return render_template("upload.html", error="Your video is too long, upload a video under 30 seconds.")
 
             if speed == "lite":
                 fast = True
             else:
                 fast = False
             print("-" * 30, "Creating Landmarks", "-" * 30)
-            landmarks = mov_create_landmarks(video_path, start_time=float(start), end_time=float(end))
+            landmarks = mov_create_landmarks(copy, start_time=float(start), end_time=float(end))
                 # landmarks = create_landmarks(video_path, start_time=float(start))
             landmarks = normalize_landmarks(landmarks)
 
@@ -101,12 +104,12 @@ def upload_file():
 
             # drawn_video_path = draw_landmarks(trimmed, fast=fast)
 
-            landmarks_data = extract_landmarks(video_path, fast)
-            filename = os.path.basename(video_path)
+            landmarks_data = extract_landmarks(copy, start, end, fast)
+            filename = os.path.basename(copy)
 
             append_landmarks_to_json(filename, landmarks_data)
 
-            save_prediction(JSON_PATH, video_path, final_prediction, confidence, start, end, mov)
+            save_prediction(JSON_PATH, copy, final_prediction, confidence, start, end, mov)
             clear_old_videos(JSON_PATH)
             clear_old_videos(JSON_LANDMARKS_PATH)
             
@@ -136,7 +139,7 @@ def show_result(video_id):
     end = prediction_data['end']
     mov = prediction_data['mov']
 
-    annotated_video_url = f"converted_videos/{video_id}"
+    annotated_video_url = f"uploaded_videos/{video_id}"
 
     return render_template(
         'result.html',

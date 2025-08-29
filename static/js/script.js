@@ -1,4 +1,5 @@
 const videoInput = document.getElementById('videoInput');
+const videoDemo = document.getElementById('videoDemo');
 const videoPreview = document.getElementById('videoPreview');
 const startSlider = document.getElementById('startSlider');
 const endSlider = document.getElementById('endSlider');
@@ -18,6 +19,12 @@ const lite = document.getElementById('lite')
 const heavy = document.getElementById('heavy')
 const selectVersion = document.getElementById('selectVersion')
 const same = document.getElementById('same')
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      videoDemo.setAttribute("playsinline", "");
+    }
+});
 
 function updateEstimate() {
   const estimateText = document.getElementById('estimatedTime');
@@ -44,7 +51,12 @@ videoInput.addEventListener('change', function () {
   const file = this.files[0];
   if (file) {
     const url = URL.createObjectURL(file);
+
     videoPreview.src = url;
+    
+    if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+      videoPreview.setAttribute("playsinline", "");
+    }
 
     videoWrapper.hidden = false;
     startLabel.hidden = false;
@@ -56,6 +68,8 @@ videoInput.addEventListener('change', function () {
     heavy.hidden = false;
     selectVersion.hidden = false;
     same.hidden = false;
+
+
 
 
     videoPreview.onloadedmetadata = function () {

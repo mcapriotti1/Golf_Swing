@@ -170,13 +170,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       function initVideo() {
     const mov = video.dataset.mov == "True" || false;
-    if (mov) {
-      start = parseFloat(video.dataset.start) || 0;
-      end = parseFloat(video.dataset.end) || 0;
-    } else {
-      start = 0;
-      end = video.duration; // safe if metadata already loaded
-    }
+    start = parseFloat(video.dataset.start) || 0;
+    end = parseFloat(video.dataset.end) || 0;
 
     video.currentTime = start;
 
