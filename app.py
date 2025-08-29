@@ -5,7 +5,7 @@ import json
 from flask import Flask, request, render_template, redirect, url_for
 import numpy as np
 from collections import Counter
-from utils import flatten_video, normalize_landmarks, cleanup_old_files, save_prediction, clear_old_videos, cleanup_folder, extract_landmarks, mov_create_landmarks, append_landmarks_to_json, copy_video
+from utils import flatten_video, normalize_landmarks, cleanup_old_files, save_prediction, clear_old_videos, cleanup_folder, extract_landmarks, create_landmarks, append_landmarks_to_json, copy_video
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -73,7 +73,7 @@ def upload_file():
                 fast = False
             print("-" * 30, "Creating Landmarks", "-" * 30)
             logging.info("Creating Landmarks")
-            landmarks = mov_create_landmarks(copy, start_time=float(start), end_time=float(end))
+            landmarks = create_landmarks(copy, start_time=float(start), end_time=float(end))
                 # landmarks = create_landmarks(video_path, start_time=float(start))
             landmarks = normalize_landmarks(landmarks)
 
