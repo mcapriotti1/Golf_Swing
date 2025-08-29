@@ -20,11 +20,11 @@ const heavy = document.getElementById('heavy')
 const selectVersion = document.getElementById('selectVersion')
 const same = document.getElementById('same')
 
-document.addEventListener("DOMContentLoaded", () => {
-  if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-      videoDemo.setAttribute("playsinline", "");
-    }
-});
+// document.addEventListener("DOMContentLoaded", () => {
+//   if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+//       videoDemo.setAttribute("playsinline", "");
+//     }
+// });
 
 function updateEstimate() {
   const estimateText = document.getElementById('estimatedTime');
