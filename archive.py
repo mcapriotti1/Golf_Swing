@@ -105,7 +105,7 @@ def draw_landmarks(video_path, output_dir="static/landmarks_drawn_videos", fast=
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     out = cv2.VideoWriter(output_path, fourcc, fps, (resize_width, resize_height))
 
-    skip_interval = 3 if fast else 1
+    skip_interval = 1
     target_interval_frames = int(fps * 0.3) if fast else 1  # detect every 0.3s in fast mode
 
     frame_idx = 0

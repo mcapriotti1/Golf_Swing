@@ -26,7 +26,6 @@ def ends_with_mov(filename):
 
 os.makedirs("static", exist_ok=True)
 os.makedirs("static/uploaded_videos", exist_ok=True)
-os.makedirs("static/trimmed_videos", exist_ok=True)
 
 @app.route('/', methods=['GET', 'POST'])
 def upload_file():
@@ -112,7 +111,6 @@ def upload_file():
             # drawn_video_path = draw_landmarks(trimmed, fast=fast)
 
             landmarks_data = extract_landmarks(copy, start, end, fast)
-            draw_landmarks(filepath)
             filename = os.path.basename(copy)
 
             append_landmarks_to_json(filename, landmarks_data)
