@@ -1,18 +1,4 @@
 {
-  "video_1756437137234.mp4": {
-    "prediction": "Pro",
-    "confidence": 0.72,
-    "start": 0.0,
-    "end": 5.1000000000000005,
-    "mov": false
-  },
-  "video_1756437475314.mp4": {
-    "prediction": "Amateur",
-    "confidence": 0.52,
-    "start": 0.8,
-    "end": 19.4,
-    "mov": false
-  },
   "video_1756437533971.mp4": {
     "prediction": "Amateur",
     "confidence": 0.77,
@@ -21,6 +7,13 @@
     "mov": false
   },
   "video_1756437561084.mp4": {
+    "prediction": "Pro",
+    "confidence": 0.66,
+    "start": 0.0,
+    "end": 13.9,
+    "mov": false
+  },
+  "video_1756438095179.mp4": {
     "prediction": "Pro",
     "confidence": 0.66,
     "start": 0.0,

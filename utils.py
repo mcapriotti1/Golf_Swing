@@ -455,8 +455,114 @@ def mov_create_landmarks(video_path: str, num_frames:int = 30, start_time: float
     cap.release()
     return landmarks
 
-# Gathering Landmark Data for video display
+
 def extract_landmarks(video_path, start, end, fast=False):
+    """
+    Memory-efficient pose extraction for long videos.
+    Only processes needed frames and resizes frames for speed.
+    """
+    import cv2, numpy as np, os, mediapipe as mp
+
+    if not os.path.exists(video_path):
+        print(f"Video not found: {video_path}")
+        return None
+
+    cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        print(f"Cannot open video: {video_path}")
+        return None
+
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    start_frame = int(float(start) * fps)
+    end_frame = int(float(end) * fps)
+    end_frame = min(end_frame, total_frames - 1)
+
+    # --- MediaPipe setup ---
+    mp_tasks = mp.tasks
+    BaseOptions = mp_tasks.BaseOptions
+    PoseLandmarker = mp_tasks.vision.PoseLandmarker
+    PoseLandmarkerOptions = mp_tasks.vision.PoseLandmarkerOptions
+    VisionRunningMode = mp_tasks.vision.RunningMode
+
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_lite.task")
+    with open(model_path, "rb") as f:
+        model_data = f.read()
+
+    options = PoseLandmarkerOptions(
+        base_options=BaseOptions(model_asset_buffer=model_data),
+        running_mode=VisionRunningMode.VIDEO,
+        num_poses=1
+    )
+
+    # --- Determine frame indices to process ---
+    if fast:
+        num_frames = int((end_frame - start_frame) / (fps * 0.1))  # ~every 0.1s
+    else:
+        num_frames = end_frame - start_frame + 1  # all frames
+
+    selected_indices = sorted(set(np.linspace(start_frame, end_frame, num=num_frames, dtype=int)))
+    landmarks_list = []
+
+    current_idx = 0
+    next_idx_to_process = selected_indices.pop(0) if selected_indices else None
+
+    with PoseLandmarker.create_from_options(options) as landmarker:
+        while cap.isOpened() and next_idx_to_process is not None:
+            # Skip frames without decoding
+            while current_idx < next_idx_to_process:
+                if not cap.grab():
+                    break
+                current_idx += 1
+
+            success, frame = cap.read()  # decode only the frame we need
+            if not success:
+                break
+
+            # Resize frame for memory/CPU efficiency
+            h, w = frame.shape[:2]
+            new_w = 640
+            new_h = int(h * (new_w / w))
+            frame = cv2.resize(frame, (new_w, new_h))
+
+            # Convert and detect
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
+            timestamp_ms = int((current_idx / fps) * 1000)
+
+            try:
+                result = landmarker.detect_for_video(mp_image, timestamp_ms)
+            except Exception as e:
+                print(f"Detection error at frame {current_idx}: {e}")
+                result = None
+
+            frame_landmarks = []
+            if result and result.pose_landmarks:
+                for idx in range(len(result.pose_landmarks[0])):
+                    if BODY_PARTS_IDX[idx] in KEY_BODY_PARTS:
+                        lm = result.pose_landmarks[0][idx]
+                        frame_landmarks.append({"x": lm.x, "y": lm.y})
+
+            landmarks_list.append({
+                "frame_index": current_idx,
+                "timestamp": current_idx / fps,
+                "landmarks": frame_landmarks
+            })
+
+            # Move to next target frame
+            current_idx += 1
+            next_idx_to_process = selected_indices.pop(0) if selected_indices else None
+
+            # Free memory
+            del frame, frame_rgb, mp_image, result, frame_landmarks
+
+    cap.release()
+    return landmarks_list
+
+
+# Gathering Landmark Data for video display
+def old_extract_landmarks(video_path, start, end, fast=False):
     """
     Extracts pose landmarks from a video in a memory-efficient way.
 
