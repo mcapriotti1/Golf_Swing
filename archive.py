@@ -5,7 +5,6 @@ import cv2
 import mediapipe as mp
 import numpy as np
 import random
-import tensorflow as tf
 from utils import flatten_video, KEY_BODY_PARTS, BODY_PARTS
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
