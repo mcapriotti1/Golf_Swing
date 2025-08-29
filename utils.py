@@ -115,8 +115,90 @@ def copy_video(video_path: str, start, end, output_path: str = None) -> str:
 ==================================================================================================== """
 
 
+
 # Old Create Landmarks (Not work since file frames corrupted during download)
 def create_landmarks(video_path, num_frames=30, start_time: float = None, end_time: float = None):
+    """
+    Extract pose landmarks from a video using MediaPipe Pose Landmarker.
+
+    Parameters:
+        video_path (str): Path to the video file.
+        num_frames (int): Number of evenly spaced frames to extract (default 30).
+
+    Returns:
+        list: List of frames, each containing a list of landmarks with x, y, z,
+                visibility, and presence values.
+    """
+    # MediaPipe setup
+    BaseOptions = mp.tasks.BaseOptions
+    PoseLandmarker = mp.tasks.vision.PoseLandmarker
+    PoseLandmarkerOptions = mp.tasks.vision.PoseLandmarkerOptions
+    VisionRunningMode = mp.tasks.vision.RunningMode
+
+    # Load the pre-trained pose landmarker model
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(BASE_DIR, "models", "pose_landmarker_lite.task")
+    with open(model_path, "rb") as f:
+        model_data = f.read()
+
+    options = PoseLandmarkerOptions(
+        base_options=BaseOptions(model_asset_buffer=model_data),
+        running_mode=VisionRunningMode.VIDEO,
+        num_poses=1
+    )
+
+    # Open video and select frames evenly spaced across the video
+    cap = cv2.VideoCapture(video_path)
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    # if start_time is None:
+    #     start_frame = 0
+    # else:
+    #     start_frame = int(start_time * fps)
+    #     if start_frame >= total_frames:
+    #         start_frame = total_frames - 1
+    # print(start_frame)
+    # print(total_frames)
+
+    # total_frames -= start_frame
+    landmarks = []
+
+    start_frame = int(start_time * fps)
+    end_frame = int(end_time * fps)
+    if end_frame >= total_frames:
+        end_frame = total_frames - 1
+
+    # Create evenly spaced frame indices
+    selected_indices = set(np.linspace(start_frame, end_frame, num=num_frames, dtype=int))
+    with PoseLandmarker.create_from_options(options) as landmarker:
+        for idx in sorted(selected_indices):
+            cap.set(cv2.CAP_PROP_POS_FRAMES, idx)
+            success, frame = cap.read()
+            if not success:
+                continue
+
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
+            timestamp_ms = int((idx / fps) * 1000)
+
+            # Detect pose landmarks
+            result = landmarker.detect_for_video(mp_image, timestamp_ms)
+            if result.pose_landmarks:
+                frame_landmarks = [{
+                    'x': lm.x,
+                    'y': lm.y,
+                    'z': lm.z,
+                    'visibility': lm.visibility,
+                    'presence': lm.presence
+                } for lm in result.pose_landmarks[0]]
+                landmarks.append(frame_landmarks)
+        
+    cap.release()
+    return landmarks
+
+    
+# Old Create Landmarks (Not work since file frames corrupted during download)
+def old_create_landmarks(video_path, num_frames=30, start_time: float = None, end_time: float = None):
     """
     Extract pose landmarks from a video using MediaPipe Pose Landmarker.
 
@@ -636,7 +718,7 @@ def clear_old_videos(JSON_PATH: str) -> None:
     now_ms = int(time.time() * 1000)
 
     def is_recent(filename):
-        TEN_MINUTES_MS = 10 * 1000 * 60
+        TEN_MINUTES_MS = 60 * 1000 * 10
         try:
             timestamp_str = filename.split('_')[1].split('.')[0]
             timestamp = int(timestamp_str)
