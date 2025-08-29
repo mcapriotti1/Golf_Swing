@@ -10,6 +10,8 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 import joblib
+import logging
+logging.basicConfig(level=logging.INFO)
 
 model = joblib.load("models/golf_swing_model.pkl")
 JSON_PATH = "static/predictions.json"
@@ -30,6 +32,7 @@ def upload_file():
         # cleanup_old_files("static/converted_videos", max_age_minutes=1)
         cleanup_old_files("static/uploaded_videos", max_age_minutes=2)
 
+        logging.info("Downloading Video")
         print("-" * 30, "Downloading Video", "-" * 30)
         if 'video' not in request.files:
             cleanup_folder("uploads")
@@ -69,6 +72,7 @@ def upload_file():
             else:
                 fast = False
             print("-" * 30, "Creating Landmarks", "-" * 30)
+            logging.info("Creating Landmarks")
             landmarks = mov_create_landmarks(copy, start_time=float(start), end_time=float(end))
                 # landmarks = create_landmarks(video_path, start_time=float(start))
             landmarks = normalize_landmarks(landmarks)
@@ -77,12 +81,12 @@ def upload_file():
                 return render_template("upload.html", error="Your body could not be detected, try uploading a clear video of the swing")
             
             flattened_landmarks = np.array(flatten_video(landmarks))
-            print("LENGTH:", len(flattened_landmarks))
             if len(flattened_landmarks) != 67530:
                 return render_template("upload.html", error="Video too short, or your body could not be detected, try uploading a clearer video.")
 
             array = flattened_landmarks.reshape(1, -1)
 
+            logging.info("Making Prediction")
             print("-" * 30, "Making Prediction", "-" * 30)
             prediction = model.predict(array)
             if hasattr(model, "predict_proba"):
@@ -98,6 +102,7 @@ def upload_file():
             else:
                 final_prediction = "Amateur"
 
+            logging.info("Extracting Landmarks For Video")
             print("-" * 30, "Extracting Landmarks For Video", "-" * 30)
             
             # Draw on backend if have the memory
