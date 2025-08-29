@@ -6,6 +6,7 @@ from flask import Flask, request, render_template, redirect, url_for
 import numpy as np
 from collections import Counter
 from utils import flatten_video, normalize_landmarks, cleanup_old_files, save_prediction, clear_old_videos, cleanup_folder, extract_landmarks, create_landmarks, append_landmarks_to_json, copy_video
+from archive import draw_landmarks
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -110,6 +111,7 @@ def upload_file():
             # drawn_video_path = draw_landmarks(trimmed, fast=fast)
 
             landmarks_data = extract_landmarks(copy, start, end, fast)
+            print(draw_landmarks(file, "static"))
             filename = os.path.basename(copy)
 
             append_landmarks_to_json(filename, landmarks_data)

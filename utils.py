@@ -497,10 +497,13 @@ def extract_landmarks(video_path, start, end, fast=False):
     )
 
     # --- Determine frame indices to process ---
+    interval_fast = 0.4
+    interval_slow = 0.2
+
     if fast:
-        num_frames = int((end_frame - start_frame) / (fps * 0.1))  # ~every 0.1s
+        num_frames = int((end_frame - start_frame) / (fps * interval_fast))
     else:
-        num_frames = end_frame - start_frame + 1  # all frames
+        num_frames = int((end_frame - start_frame) / (fps * interval_slow))
 
     selected_indices = sorted(set(np.linspace(start_frame, end_frame, num=num_frames, dtype=int)))
     landmarks_list = []
