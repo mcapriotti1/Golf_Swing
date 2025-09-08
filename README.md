@@ -11,6 +11,22 @@ This project analyzes golf swings and classifies them as either **Pro** or **Ama
      style="display: block; margin: 0 auto;">
 </div>
 
+## Uploading Video
+
+<div style="text-align: center">
+  <img src="static/images/golf_download.gif" 
+     alt="Demo Screenshot" 
+     style="display: block; margin: 0 auto;">
+</div>
+
+## Prediction
+
+<div style="text-align: center">
+  <img src="static/images/golf_prediction.gif" 
+     alt="Demo Screenshot" 
+     style="display: block; margin: 0 auto;">
+</div>
+
 ## Pose Extraction
 
 - Used **MediaPipe Pose Landmarker (Heavy)** to extract landmarks.
@@ -135,6 +151,7 @@ def train_random_forest(X, y):
 - [scikit-learn](https://scikit-learn.org/) – for machine learning models  
 - [OpenCV](https://opencv.org/) – for video processing  
 - [NumPy](https://numpy.org/) – for numerical computations  
+
 
 
 
