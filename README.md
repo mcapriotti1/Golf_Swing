@@ -1,21 +1,8 @@
 # Golf Swing Analyzer
 
-This project analyzes golf swings and classifies them as either **Pro** or **Amateur** using machine learning and pose estimation. Check it out [here](https://golf-swing.onrender.com/).
+This project analyzes golf swings and classifies them as either **Pro** or **Amateur** using machine learning and pose estimation. Built as a **Flask web app** so users can upload videos and see results online. Check it out [here](https://golf-swing.onrender.com/).
 
 ---
-
-## Installation & Setup
-
-1. Clone the repository:  
-   ```bash
-   git clone https://github.com/mcapriotti1/Golf_Swing.git
-   cd golf-swing-analyzer
-2. Install Dependencies (Use Python 3.12.6):
-   ```bash
-   pip install -r requirements.txt:
-3. Run the app locally
-   ```bash
-   python app.py
 
 ## Demo
 <div style="text-align: center">
@@ -148,5 +135,6 @@ def train_random_forest(X, y):
 - [scikit-learn](https://scikit-learn.org/) – for machine learning models  
 - [OpenCV](https://opencv.org/) – for video processing  
 - [NumPy](https://numpy.org/) – for numerical computations  
+
 
 
