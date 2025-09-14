@@ -14,6 +14,8 @@ This project analyzes golf swings and classifies them as either Pro or Amateur u
 #### Flask Web App
 The web app allows users to upload a vide of their golf swing (MP4/MOV) to get a prediction on their level and annotated video. Since the model was trained on perfectly trimmed videos, the app includes a trim feature. If the user uploads a video that is too short to capture 30 frames or not enough landmarks are detected it displays an error screen. Originally the video trimming, and landmark drawings were done via openCV, but when deployed the methods required too much memory, since the app is hosted on Render's free tier (512 MB of RAM). Videos were preprocessed and trimmed using FFmpeg, while landmark visualization was offloaded to the frontend via JavaScript to reduce memory overhead. Similarly, to maintain efficiency during pose estimation, the MediaPipe Lite model was employed in place of the heavier model.
 
+# Demo
+
 ## Front Page
 <div style="text-align: center">
   <img src="static/images/golf_demo.gif" 
@@ -44,4 +46,3 @@ Unfortunately, given the nature of the training videos coming directly from Yout
 ```bash 
 python app.py
 ```
-
