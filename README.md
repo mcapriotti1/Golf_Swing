@@ -44,7 +44,7 @@ Unfortunately, given the nature of the training videos coming directly from Yout
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/mcapriotti1/stock_predictor.git
+git clone https://github.com/mcapriotti1/Golf_Swing.git
 cd stock_predictor
 ```
 
@@ -52,4 +52,5 @@ cd stock_predictor
 ```bash 
 python app.py
 ```
+
 
