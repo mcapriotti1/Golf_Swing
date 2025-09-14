@@ -42,7 +42,14 @@ The web app allows users to upload a vide of their golf swing (MP4/MOV) to get a
 ## Running Instructions
 Unfortunately, given the nature of the training videos coming directly from Youtube, the model training data was kept in a separate folder.
 
-### 1. Run Flask
+### 1. Clone the Repository
+```bash
+git clone https://github.com/mcapriotti1/stock_predictor.git
+cd stock_predictor
+```
+
+### 2. Run Flask
 ```bash 
 python app.py
 ```
+
