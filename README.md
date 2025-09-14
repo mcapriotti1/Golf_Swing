@@ -1,10 +1,20 @@
-# Golf Swing Analyzer
+# Golf Swing Analyzer (AI)
 
-This project analyzes golf swings and classifies them as either **Pro** or **Amateur** using machine learning and pose estimation. Built as a **Flask web app** so users can upload videos and see results online. Check it out [here](https://golf-swing.onrender.com/).
+This project analyzes golf swings and classifies them as either Pro or Amateur using a **Random Forest Classification** model and pose estimation. Users can upload videos and see predictions via the **Flask web app** [here](https://golf-swing.onrender.com/) (May have to wait 5 minutes).
 
 ---
 
-## Demo
+## About the Project
+
+**Tech Used:** Python, Mediapipe, Flask, scikit-learn, NumpPy, OpenCV, Javascript, HTML, CSS
+
+#### Making Model
+50 amateur and 50 pro golf swings from Youtube were manually gathered, labeled, and cleaned via a custom trimming and cropping script. Once the data was collected and cleaned, MediaPipe Pose Landmarker (Heavy) was ran on 30 frames of each video, which extracts 3D posistion coordinates, visibilty, and presence. The detection covers very many body parts, but in order to reduce noise due to limited data only key body parts for a golf swing were included. the feet, knees, hips, elbows, hands, shoulders, and nose. For every frame, 3D coordinates were normalized to the left hip, velocities were computed from one frame to the next (initialized as 0), and key joint angles were calculated. All of these components were combined into a single flattened array for each video of normalized posistions, velocities, and joint angles. The Random Forest Classifier (100 trees) was traind on the flattened arrays, with a train/test split of 80/20 with stratification and a fixed random seed. The model performance has an on average accuracy of ~80%, but the  the precision, recall, F1-score, and support are heavily seed dependent.
+
+#### Flask Web App
+The web app allows users to upload a vide of their golf swing (MP4/MOV) to get a prediction on their level and annotated video. Since the model was trained on perfectly trimmed videos, the app includes a trim feature. If the user uploads a video that is too short to capture 30 frames or not enough landmarks are detected it displays an error screen. Originally the video trimming, and landmark drawings were done via openCV, but when deployed the methods required too much memory, since the app is hosted on Render's free tier (512 MB of RAM). Videos were preprocessed and trimmed using FFmpeg, while landmark visualization was offloaded to the frontend via JavaScript to reduce memory overhead. Similarly, to maintain efficiency during pose estimation, the MediaPipe Lite model was employed in place of the heavier model.
+
+## Front Page
 <div style="text-align: center">
   <img src="static/images/golf_demo.gif" 
      alt="Demo Screenshot" 
@@ -27,131 +37,11 @@ This project analyzes golf swings and classifies them as either **Pro** or **Ama
      style="display: block; margin: 0 auto;">
 </div>
 
-## Pose Extraction
+## Running Instructions
+Unfortunately, given the nature of the training videos coming directly from Youtube, the model training data was kept in a separate folder.
 
-- Used **MediaPipe Pose Landmarker (Heavy)** to extract landmarks.
-- Key body parts used for analysis:
-  ```python
-  KEY_BODY_PARTS = [
-  "Left Shoulder", "Right Shoulder", "Left Elbow", "Right Elbow","Left Hip", "Right Hip", "Left Index", 
-  "Right Index", "Left Foot Index", "Right Foot Index", "Nose", "Left Knee", "Right Knee" ]
-- Extracted landmark data **(x, y, z, visibility, presence)** for each of the listed body parts from **30** evenly spaced frames per video.
-
-  ```python
-  selected_indices = np.linspace(0, total_frames - 1, num=num_frames, dtype=int)
-
-- Code for getting the landmark data from a video.
-
-  ```python
-  landmarks = create_landmarks("example_video.mp4")
-
-- First we normalize x, y, z positions relative to the left hip:
-
-  ```python
-  normalized = normalize_landmarks(landmarks)
-
-- We then calculate velocities for each body part (first frame initialized to 0)
-
-  ```python
-    velocity = compute_velocity(prev_frame, frame)
-
-- Next we compute the specified joint angles.
-
-  ```python
-    joints_to_compute = [
-        ("Right Shoulder", "Right Elbow", "Right Index"), ("Left Hip", "Left Knee", "Left Foot Index"),
-        ("Right Hip", "Right Knee", "Right Foot Index"), ("Left Shoulder", "Left Hip", "Left Foot Index"),
-        ("Right Shoulder", "Right Hip", "Right Foot Index"), ("Left Elbow", "Left Shoulder", "Left Hip"),
-        ("Right Elbow", "Right Shoulder", "Right Hip") ]
-    angles = compute_joint_angles(frame)
-
-- Velocities and joint angles are calculated frame by frame, which is done automatically while flattening the array.
-
-  ```python
-  flattened = flatten_video(normalized)
-
----
-
-
-## Dataset
-   - Collected 100 golf swing videos:
-     - 50 Pro swings
-     - 50 Amateur swings
-   - Videos were labeled manually.
-## Model Training
-
-We use a **Random Forest Classifier** to classify golf swings as Pro or Amateur. The training process includes data preparation, model training, and evaluation.
-
-### 1. Feature Preparation
-Each video is converted into a flattened feature vector containing:
-- **Normalized landmark positions** (x, y, z relative to left hip)  
-- **Velocities** for each body part (frame-to-frame changes)  
-- **Joint angles** computed from key landmarks  
-
-This flattening allows the Random Forest model to process a single vector per video:
-
-   ```python
-    X_flat = np.array([flatten_video(video) for video in X])
+### 1. Run Flask
+```bash 
+python app.py
 ```
-
-### 2. Train/Test Split
-
-Due to the small dataset, The dataset is split into 80% training and 20% testing while preserving the Pro/Amateur distribution (stratified), a fixed random seed is used to ensure reproducibility of results.:
-```python
-from sklearn.model_selection import train_test_split
-X_train, X_test, y_train, y_test = train_test_split(
-    X_flat, y, test_size=0.2, stratify=y, random_state=seed
-)
-```
-
-### 3.Model Setup
-
-We train a Random Forest Classifier with 100 trees:
-
-```python
-from sklearn.ensemble import RandomForestClassifier
-
-model = RandomForestClassifier(n_estimators=100, random_state=seed)
-model.fit(X_train, y_train)
-```
-
-### 4. Evaluation:
-
-The model is evaluated using precision, recall, F1-score, and support:
-
-```python
-from sklearn.metrics import classification_report
-
-y_pred = model.predict(X_test)
-print(classification_report(y_test, y_pred))
-```
-
-### 5. Training Function:
-
-```python
-def train_random_forest(X, y):
-    seed = set_seeds()
-    print("\n=== Random Forest Classifier ===")
-    X_flat = np.array([flatten_video(video) for video in X])
-    X_train, X_test, y_train, y_test = train_test_split(
-        X_flat, y, test_size=0.2, stratify=y, random_state=seed
-    )
-
-    model = RandomForestClassifier(n_estimators=100, random_state=76)
-    model.fit(X_train, y_train)
-    y_pred = model.predict(X_test)
-
-    print(classification_report(y_test, y_pred))
-    return model, y_test, y_pred
-```
-
-## Credits
-
-- [MediaPipe](https://developers.google.com/mediapipe) – for pose landmark detection  
-- [scikit-learn](https://scikit-learn.org/) – for machine learning models  
-- [OpenCV](https://opencv.org/) – for video processing  
-- [NumPy](https://numpy.org/) – for numerical computations  
-
-
-
 
