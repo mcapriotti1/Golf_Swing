@@ -40,7 +40,7 @@ The web app allows users to upload a vide of their golf swing (MP4/MOV) to get a
 </div>
 
 ## Running Instructions
-Unfortunately, given the nature of the training videos coming directly from Youtube, the model training data was kept in a separate folder.
+Unfortunately, given the nature of the training videos coming directly from Youtube, the model training data was kept in a private folder.
 
 ### 1. Clone the Repository
 ```bash
@@ -52,6 +52,7 @@ cd Golf_Swing
 ```bash 
 python app.py
 ```
+
 
 
 
