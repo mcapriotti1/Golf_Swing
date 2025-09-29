@@ -1,4 +1,4 @@
-# Golf Swing Analyzer (AI)
+# Golf Swing Analyzer
 
 This project analyzes golf swings and classifies them as either Pro or Amateur using a **Random Forest Classification** model and pose estimation. Users can upload videos and see predictions via the **Flask web app** [here](https://golf-swing.onrender.com/) (May have to wait 5 minutes).
 
@@ -52,6 +52,7 @@ cd Golf_Swing
 ```bash 
 python app.py
 ```
+
 
 
 
